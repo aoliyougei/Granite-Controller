@@ -1,0 +1,54 @@
+syntax = "v1"
+
+info(
+  title: "Needle Controller"
+  desc: "Validated natural-language infrastructure actions"
+  version: "0.1.0"
+)
+
+type HealthResponse {
+  Status string `json:"status"`
+}
+
+type DependencyStatus {
+  Needle string `json:"needle"`
+  InfrastructureControl string `json:"infrastructureControl"`
+}
+
+type ReadyResponse {
+  Status string `json:"status"`
+  Dependencies DependencyStatus `json:"dependencies"`
+}
+
+type ChatRequest {
+  Message string `json:"message"`
+}
+
+type StartVMArguments {
+  VMID int64 `json:"vmid"`
+}
+
+type ChatResponse {
+  Status string `json:"status"`
+  Message string `json:"message"`
+  Tool string `json:"tool"`
+  Arguments StartVMArguments `json:"arguments"`
+  Confidence float64 `json:"confidence"`
+  UpstreamStatus int `json:"upstreamStatus"`
+  RequestID string `json:"requestId"`
+}
+
+@server(group: public)
+service needle-controller {
+  @handler Health
+  get /healthz returns (HealthResponse)
+
+  @handler Ready
+  get /readyz returns (ReadyResponse)
+}
+
+@server(group: protected)
+service needle-controller {
+  @handler Chat
+  post /api/v1/chat (ChatRequest) returns (ChatResponse)
+}

@@ -1,0 +1,16 @@
+Name: needle-controller
+Host: 0.0.0.0
+Port: 8080
+Mode: pro
+
+Needle:
+  BaseURL: http://needle-openai:8000
+  Model: needle-2
+  Timeout: 2m
+  MinConfidence: 0.6
+  MaxTokens: 256
+  MaxMessageLength: 512
+
+InfraControl:
+  BaseURL: http://infrastructure-control:8080
+  Timeout: 30s
