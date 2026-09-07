@@ -45,7 +45,7 @@ func ValidateStartVM(completion Completion, minConfidence float64) (StartVMComma
 	if *confidence < minConfidence {
 		return StartVMCommand{}, validationError(apierror.CodeNeedleLowConfidence, "模型置信度不足，未执行操作")
 	}
-	if len(completion.Safety.Validation.Ungrounded) == 0 {
+	if len(completion.Safety.Validation.Ungrounded) == 0 || bytes.Equal(bytes.TrimSpace(completion.Safety.Validation.Ungrounded), []byte("null")) {
 		return StartVMCommand{}, validationError(apierror.CodeNeedleSafetyMetadataInvalid, "模型安全元数据无效")
 	}
 	var ungrounded []json.RawMessage

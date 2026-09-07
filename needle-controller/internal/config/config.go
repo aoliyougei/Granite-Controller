@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"math"
 	"net/url"
 	"os"
 	"strconv"
@@ -123,7 +124,7 @@ func (c Config) Validate() error {
 	if c.InfraControl.Timeout <= 0 {
 		return fmt.Errorf("INFRA_CONTROL_TIMEOUT must be positive")
 	}
-	if c.Needle.MinConfidence < 0 || c.Needle.MinConfidence > 1 {
+	if math.IsNaN(c.Needle.MinConfidence) || math.IsInf(c.Needle.MinConfidence, 0) || c.Needle.MinConfidence < 0 || c.Needle.MinConfidence > 1 {
 		return fmt.Errorf("NEEDLE_MIN_CONFIDENCE must be between 0 and 1")
 	}
 	if c.Needle.MaxTokens <= 0 {
@@ -177,7 +178,7 @@ func intValue(name string, fallback int) (int, error) {
 
 func validBaseURL(name, value string) error {
 	parsed, err := url.Parse(value)
-	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" {
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" || parsed.User != nil || (parsed.Path != "" && parsed.Path != "/") || parsed.RawQuery != "" || parsed.Fragment != "" {
 		return fmt.Errorf("%s must be an http(s) origin without credentials, query, or fragment", name)
 	}
 	return nil

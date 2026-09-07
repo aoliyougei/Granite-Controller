@@ -78,6 +78,7 @@ func TestValidateStartVMRejectsUnsafeMetadata(t *testing.T) {
 		{"high confidence", func(c *Completion) { c.Safety.Confidence = floatPtr(1.1) }, "NEEDLE_SAFETY_METADATA_INVALID"},
 		{"low confidence", func(c *Completion) { c.Safety.Confidence = floatPtr(0.59) }, "NEEDLE_LOW_CONFIDENCE"},
 		{"missing ungrounded", func(c *Completion) { c.Safety.Validation.Ungrounded = nil }, "NEEDLE_SAFETY_METADATA_INVALID"},
+		{"null ungrounded", func(c *Completion) { c.Safety.Validation.Ungrounded = json.RawMessage(`null`) }, "NEEDLE_SAFETY_METADATA_INVALID"},
 		{"invalid ungrounded", func(c *Completion) { c.Safety.Validation.Ungrounded = json.RawMessage(`{}`) }, "NEEDLE_SAFETY_METADATA_INVALID"},
 		{"nonempty ungrounded", func(c *Completion) { c.Safety.Validation.Ungrounded = json.RawMessage(`["vmid"]`) }, "NEEDLE_ARGUMENTS_UNGROUNDED"},
 		{"missing negation", func(c *Completion) { c.Safety.Validation.Negation = nil }, "NEEDLE_SAFETY_METADATA_INVALID"},
