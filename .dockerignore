@@ -1,4 +1,8 @@
 .git
+.gitignore
+.worktrees/
+source/
+docs/
 .env
 .env.*
 !.env.example

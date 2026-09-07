@@ -10,9 +10,9 @@
 !.env.example
 
 # Go build/test output.
-/needle-controller/bin/
-/needle-controller/coverage.out
-/needle-controller/*.test
+/bin/
+/coverage.out
+/*.test
 
 # Editors and operating systems.
 .idea/
