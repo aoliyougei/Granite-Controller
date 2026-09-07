@@ -11,6 +11,7 @@ const validYAML = `
 Name: needle-controller
 Host: 0.0.0.0
 Port: 8080
+Timeout: 130000
 Needle:
   BaseURL: http://needle-openai:8000
   Model: needle-2
@@ -53,6 +54,9 @@ func TestLoadAppliesEnvironmentOverrides(t *testing.T) {
 	cfg, err := Load(configPath(t, validYAML))
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.Timeout != 130000 {
+		t.Errorf("REST Timeout = %d, want 130000 milliseconds", cfg.Timeout)
 	}
 	if cfg.Needle.BaseURL != "http://needle.example:8000" {
 		t.Errorf("Needle.BaseURL = %q", cfg.Needle.BaseURL)

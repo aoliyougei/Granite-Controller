@@ -1,6 +1,8 @@
 Name: needle-controller
 Host: 0.0.0.0
 Port: 8080
+# go-zero REST request timeout in milliseconds; must exceed Needle.Timeout.
+Timeout: 130000
 Mode: pro
 
 Needle:

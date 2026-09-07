@@ -33,13 +33,20 @@ func (s *chatService) Execute(ctx context.Context, requestID, message string) (t
 	if message == "" || utf8.RuneCountInString(message) > s.maxMessageLength {
 		return types.ChatResponse{}, apierror.New(apierror.CodeMessageInvalid, "消息不能为空或超过长度限制", http.StatusBadRequest, nil)
 	}
-	completion, err := s.needle.Complete(ctx, message)
+	normalized, err := NormalizeChineseVMStart(message)
+	if err != nil {
+		return types.ChatResponse{}, err
+	}
+	completion, err := s.needle.Complete(ctx, normalized.NeedleMessage)
 	if err != nil {
 		return types.ChatResponse{}, err
 	}
 	command, err := needle.ValidateStartVM(completion, s.minConfidence)
 	if err != nil {
 		return types.ChatResponse{}, err
+	}
+	if command.VMID != normalized.VMID {
+		return types.ChatResponse{}, apierror.New(apierror.CodeNeedleArgumentsUngrounded, "模型返回的虚拟机 ID 与中文原始指令不一致，未执行操作", http.StatusUnprocessableEntity, nil)
 	}
 	result, err := s.infra.StartVM(ctx, requestID, command.VMID)
 	if err != nil {

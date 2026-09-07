@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 	"testing"
 
 	"needle-controller/internal/apierror"
@@ -60,7 +59,7 @@ func TestChatExecuteStartsValidatedVM(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if n.message != "开启 3052 这个 VM" || n.calls != 1 {
+	if n.message != "Start VM 3052" || n.calls != 1 {
 		t.Fatalf("needle calls=%d message=%q", n.calls, n.message)
 	}
 	if i.calls != 1 || i.vmid != 3052 || i.requestID != "req-1" {
@@ -91,7 +90,7 @@ func TestChatExecuteShortCircuitsFailures(t *testing.T) {
 	t.Run("needle error", func(t *testing.T) {
 		n := &fakeNeedle{err: apierror.New(apierror.CodeNeedleUnavailable, "unavailable", 502, errors.New("network"))}
 		i := &fakeInfra{}
-		_, err := NewChatService(n, i, 0.6, 512).Execute(context.Background(), "req", "start")
+		_, err := NewChatService(n, i, 0.6, 512).Execute(context.Background(), "req", "启动 VM 3052")
 		assertLogicCode(t, err, "NEEDLE_UNAVAILABLE")
 		if i.calls != 0 {
 			t.Fatal("infra called")
@@ -101,7 +100,7 @@ func TestChatExecuteShortCircuitsFailures(t *testing.T) {
 		c := passingCompletion()
 		c.ToolCalls[0].Function.Name = "bad"
 		n, i := &fakeNeedle{completion: c}, &fakeInfra{}
-		_, err := NewChatService(n, i, 0.6, 512).Execute(context.Background(), "req", "start")
+		_, err := NewChatService(n, i, 0.6, 512).Execute(context.Background(), "req", "启动 VM 3052")
 		assertLogicCode(t, err, "NEEDLE_TOOL_NOT_ALLOWED")
 		if i.calls != 0 {
 			t.Fatal("infra called")
@@ -111,9 +110,20 @@ func TestChatExecuteShortCircuitsFailures(t *testing.T) {
 		n := &fakeNeedle{completion: passingCompletion()}
 		want := apierror.New(apierror.CodeInfraControlRequestFailed, "failed", 502, nil)
 		i := &fakeInfra{err: want}
-		_, err := NewChatService(n, i, 0.6, 512).Execute(context.Background(), "req", strings.Repeat("x", 3))
+		_, err := NewChatService(n, i, 0.6, 512).Execute(context.Background(), "req", "启动 VM 3052")
 		if !errors.Is(err, want) {
 			t.Fatalf("error=%v", err)
+		}
+	})
+
+	t.Run("model vmid mismatch", func(t *testing.T) {
+		c := passingCompletion()
+		c.ToolCalls[0].Function.Arguments = json.RawMessage(`{"vmid":3053}`)
+		n, i := &fakeNeedle{completion: c}, &fakeInfra{}
+		_, err := NewChatService(n, i, 0.6, 512).Execute(context.Background(), "req", "启动 VM 3052")
+		assertLogicCode(t, err, "NEEDLE_ARGUMENTS_UNGROUNDED")
+		if i.calls != 0 {
+			t.Fatal("infra called for mismatched VM ID")
 		}
 	})
 }

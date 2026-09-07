@@ -39,6 +39,10 @@ func TestVMStartHappyPath(t *testing.T) {
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 			t.Fatal(err)
 		}
+		messages, ok := payload["messages"].([]any)
+		if !ok || len(messages) != 1 || messages[0].(map[string]any)["content"] != "Start VM 3052" {
+			t.Errorf("messages = %#v", payload["messages"])
+		}
 		tools, ok := payload["tools"].([]any)
 		if !ok || len(tools) != 1 {
 			t.Errorf("tools = %#v", payload["tools"])
@@ -79,7 +83,7 @@ func TestRejectedModelOutputsNeverReachInfrastructure(t *testing.T) {
 			n := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(tc.body)) }))
 			defer n.Close()
 			h := buildHandler(n.URL, infra.URL)
-			r := httptest.NewRequest(http.MethodPost, "/api/v1/chat", strings.NewReader(`{"message":"test"}`))
+			r := httptest.NewRequest(http.MethodPost, "/api/v1/chat", strings.NewReader(`{"message":"启动 VM 3052"}`))
 			r.Header.Set("Authorization", "Bearer controller-test-value")
 			w := httptest.NewRecorder()
 			h.ServeHTTP(w, r)

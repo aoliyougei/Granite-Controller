@@ -12,7 +12,9 @@ Natural language -> pve_vm_start({"vmid": ...}) -> POST /api/v1/pve/vms/{vmid}/s
 
 `POST /api/v1/chat` performs the action immediately after validation. Phase one has **no confirmation flow and no VM allowlist**. Restrict network exposure and possession of `CONTROLLER_API_TOKEN`.
 
-The controller rejects execution unless Needle returns exactly one `pve_vm_start` call, a positive integer VM ID, confidence at or above the configured threshold, an empty `ungrounded` list, and `negation: false`. It never accepts model-provided URLs, methods, headers, or credentials.
+The public endpoint accepts only explicit Chinese VM-start instructions. Before inference, the controller requires a Chinese start term (`开启`, `启动`, `开机`, `打开`, or `开起来`), an explicit `VM`/`虚拟机` marker, and exactly one positive numeric VM ID. It rejects negative or conflicting terms such as `不要`, `关闭`, and `重启`, then normalizes the accepted instruction internally to `Start VM <vmid>` because the base Needle 2 model is materially more reliable in English.
+
+The controller rejects execution unless Needle returns exactly one `pve_vm_start` call with the same VM ID extracted from the original Chinese text, confidence at or above the configured threshold, an empty `ungrounded` list, and `negation: false`. It never accepts model-provided URLs, methods, headers, or credentials.
 
 ## Configuration
 
@@ -27,7 +29,7 @@ Required service origins:
 - `NEEDLE_BASE_URL`, for example `http://needle-openai.example:8000` (without `/v1`).
 - `INFRA_CONTROL_BASE_URL`, for example `http://infrastructure-control.example:8080`.
 
-`NEEDLE_MIN_CONFIDENCE` defaults to `0.6`. Calibrate it with your own Chinese instructions before production use.
+`NEEDLE_MIN_CONFIDENCE` defaults to `0.6`. The model sees the normalized internal instruction, while callers and API responses remain Chinese. Calibrate the complete Chinese-to-normalized flow before production use.
 
 ## Run with Docker Compose
 
@@ -75,6 +77,8 @@ A successful submission returns HTTP 202:
 ```
 
 **HTTP 202 means the start request was accepted by Infrastructure Control. It does not mean the VM has finished starting.** Phase one does not poll VM state.
+
+Examples accepted by the strict Chinese parser include `开启 3052 这个 VM`, `启动虚拟机 3052`, and `给 3052 号虚拟机开机`. Requests such as `不要开启 VM 3052`, `启动 VM 3052 和 3053`, `关闭 VM 3052`, and English-only input are rejected before inference.
 
 ## Development
 
