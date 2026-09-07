@@ -1,0 +1,20 @@
+# Upstream reference repositories are maintained independently.
+/source/
+
+# Isolated feature worktrees.
+/.worktrees/
+
+# Local secrets and overrides.
+.env
+.env.*
+!.env.example
+
+# Go build/test output.
+/needle-controller/bin/
+/needle-controller/coverage.out
+/needle-controller/*.test
+
+# Editors and operating systems.
+.idea/
+.vscode/
+.DS_Store
