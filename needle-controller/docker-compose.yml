@@ -1,0 +1,33 @@
+services:
+  needle-controller:
+    build:
+      context: .
+    image: needle-controller:0.1.0
+    ports:
+      - "${CONTROLLER_PORT:-8080}:8080"
+    environment:
+      CONTROLLER_API_TOKEN: "${CONTROLLER_API_TOKEN:?required}"
+      NEEDLE_BASE_URL: "${NEEDLE_BASE_URL:?required}"
+      NEEDLE_API_KEY: "${NEEDLE_API_KEY:-}"
+      NEEDLE_MODEL_ID: "${NEEDLE_MODEL_ID:-needle-2}"
+      NEEDLE_MIN_CONFIDENCE: "${NEEDLE_MIN_CONFIDENCE:-0.6}"
+      NEEDLE_TIMEOUT: "${NEEDLE_TIMEOUT:-120s}"
+      NEEDLE_MAX_TOKENS: "${NEEDLE_MAX_TOKENS:-256}"
+      CONTROLLER_MAX_MESSAGE_LENGTH: "${CONTROLLER_MAX_MESSAGE_LENGTH:-512}"
+      INFRA_CONTROL_BASE_URL: "${INFRA_CONTROL_BASE_URL:?required}"
+      INFRA_CONTROL_API_TOKEN: "${INFRA_CONTROL_API_TOKEN:?required}"
+      INFRA_CONTROL_TIMEOUT: "${INFRA_CONTROL_TIMEOUT:-30s}"
+    healthcheck:
+      test: ["CMD", "/needle-controller", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

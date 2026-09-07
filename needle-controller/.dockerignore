@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+!.env.example
+bin/
+coverage.out
+*.test
+Dockerfile*
+!Dockerfile
+README.md
