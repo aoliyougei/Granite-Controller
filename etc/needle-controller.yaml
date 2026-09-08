@@ -1,18 +1,15 @@
 Name: needle-controller
 Host: 0.0.0.0
 Port: 8080
-# go-zero REST request timeout in milliseconds; must exceed Needle.Timeout.
+# go-zero REST timeout in milliseconds; include queue wait plus native inference.
 Timeout: 130000
 Mode: pro
 
 Needle:
-  BaseURL: http://needle-openai:8000
-  Model: needle-2
-  Timeout: 2m
-  MinConfidence: 0.6
-  MaxTokens: 256
-  MaxMessageLength: 512
-
-InfraControl:
-  BaseURL: http://infrastructure-control:8080
-  Timeout: 30s
+  ModelID: needle-2
+  MaxNewTokens: 256
+  MaxQueueDepth: 32
+  MaxReplaySteps: 32
+  BufferSize: 1048576
+  ToolIndexPath: ""
+  SlowCall: 30s
