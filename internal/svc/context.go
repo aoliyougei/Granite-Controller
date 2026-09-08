@@ -2,14 +2,15 @@ package svc
 
 import (
 	"needle-controller/internal/config"
+	"needle-controller/internal/infracontrol"
+	"needle-controller/internal/managed"
 	"needle-controller/internal/native"
-	"needle-controller/internal/openai"
 )
 
 type ServiceContext struct {
 	Config     config.Config
 	Dispatcher *native.Dispatcher
-	OpenAI     *openai.Service
+	Managed    *managed.Service
 }
 
 func NewServiceContext(cfg config.Config) *ServiceContext {
@@ -21,6 +22,6 @@ func NewServiceContext(cfg config.Config) *ServiceContext {
 		}
 		return native.NewEngine(abi, cfg.Needle.BufferSize), nil
 	}, probe, cfg.Needle.MaxQueueDepth)
-	service := openai.NewService(dispatcher, cfg.Needle, openai.DefaultSchemaLimits())
-	return &ServiceContext{Config: cfg, Dispatcher: dispatcher, OpenAI: service}
+	service := managed.NewService(dispatcher, infracontrol.NewClient(cfg.InfraControl), cfg.Needle)
+	return &ServiceContext{Config: cfg, Dispatcher: dispatcher, Managed: service}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"needle-controller/internal/apierror"
+	"needle-controller/internal/managed"
 	"needle-controller/internal/native"
 	"needle-controller/internal/openai"
 	"needle-controller/internal/requestid"
@@ -13,7 +14,7 @@ import (
 type OpenAIService interface {
 	State() native.State
 	ModelList() openai.ModelListResponse
-	Complete(context.Context, openai.ChatCompletionRequest) (openai.ChatCompletionResponse, *apierror.Error)
+	Complete(context.Context, string, openai.ChatCompletionRequest) (managed.ResponseBody, *apierror.Error)
 }
 
 func ChatCompletions(service OpenAIService) http.Handler {
@@ -24,7 +25,7 @@ func ChatCompletions(service OpenAIService) http.Handler {
 			WriteError(w, requestID, err)
 			return
 		}
-		response, err := service.Complete(r.Context(), input)
+		response, err := service.Complete(r.Context(), requestID, input)
 		if err != nil {
 			if err.Code == "request_canceled" {
 				return
@@ -42,7 +43,7 @@ func ChatCompletions(service OpenAIService) http.Handler {
 		w.Header().Set("X-Request-ID", requestID)
 		w.WriteHeader(http.StatusOK)
 		includeUsage := input.StreamOptions != nil && input.StreamOptions.IncludeUsage
-		for _, event := range openai.StreamEvents(response, includeUsage) {
+		for _, event := range managed.StreamEvents(response, includeUsage) {
 			_, _ = fmt.Fprintf(w, "data: %s\n\n", event.Data)
 		}
 	})

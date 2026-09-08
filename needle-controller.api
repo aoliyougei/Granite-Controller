@@ -1,35 +1,18 @@
 syntax = "v1"
 
 info(
-  title: "Needle OpenAI Tool Calling Service"
-  desc: "OpenAI-compatible tool selection backed by an embedded Needle engine; tools are never executed"
-  version: "0.2.0"
+  title: "Needle Managed VM Start Service"
+  desc: "OpenAI-compatible managed PVE VM start backed by embedded Needle 2"
+  version: "0.3.0"
 )
 
-type HealthResponse {
-  Status string `json:"status"`
-}
+type HealthResponse { Status string `json:"status"` }
+type ReadyResponse { Status string `json:"status"`; Model string `json:"model"` }
+type Model { ID string `json:"id"`; Object string `json:"object"`; Created int64 `json:"created"`; OwnedBy string `json:"owned_by"` }
+type ModelListResponse { Object string `json:"object"`; Data []Model `json:"data"` }
 
-type ReadyResponse {
-  Status string `json:"status"`
-  Model string `json:"model"`
-}
-
-type Model {
-  ID string `json:"id"`
-  Object string `json:"object"`
-  Created int64 `json:"created"`
-  OwnedBy string `json:"owned_by"`
-}
-
-type ModelListResponse {
-  Object string `json:"object"`
-  Data []Model `json:"data"`
-}
-
-// Chat Completions uses dynamic OpenAI messages/tools JSON. Runtime structs in
-// internal/openai are authoritative because goctl cannot express arbitrary
-// validated JSON Schemas.
+// Runtime accepts permissive Agent-style OpenAI JSON but processes only the
+// final plain-text user message. Client tools and history are ignored.
 type ChatCompletionRequest {}
 type ChatCompletionResponse {}
 
@@ -37,7 +20,6 @@ type ChatCompletionResponse {}
 service needle-controller {
   @handler Health
   get /healthz returns (HealthResponse)
-
   @handler Ready
   get /readyz returns (ReadyResponse)
 }
@@ -46,7 +28,6 @@ service needle-controller {
 service needle-controller {
   @handler Models
   get /v1/models returns (ModelListResponse)
-
   @handler ChatCompletions
   post /v1/chat/completions (ChatCompletionRequest) returns (ChatCompletionResponse)
 }
