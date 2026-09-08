@@ -71,6 +71,9 @@ func ModelList(modelID string) ModelListResponse {
 }
 
 func MapResponse(modelID string, envelope native.Envelope, warnings []string) (ChatCompletionResponse, *apierror.Error) {
+	if warnings == nil {
+		warnings = []string{}
+	}
 	calls := make([]ToolCallResponse, 0, len(envelope.FunctionCalls))
 	for _, call := range envelope.FunctionCalls {
 		for _, raw := range call.Arguments {

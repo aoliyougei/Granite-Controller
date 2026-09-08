@@ -54,7 +54,7 @@ func TestResponseDoesNotPromoteReasoningWhenNoToolSelected(t *testing.T) {
 		t.Fatal(err)
 	}
 	choice := got.Choices[0]
-	if choice.FinishReason != "stop" || choice.Message.Content != nil || len(choice.Message.ToolCalls) != 0 || got.XNeedle.Reasoning != "internal only" {
+	if choice.FinishReason != "stop" || choice.Message.Content != nil || len(choice.Message.ToolCalls) != 0 || got.XNeedle.Reasoning != "internal only" || got.XNeedle.Warnings == nil {
 		t.Fatalf("response = %+v", got)
 	}
 }
