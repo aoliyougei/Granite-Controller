@@ -2,6 +2,9 @@ Name: needle-controller
 Host: 0.0.0.0
 Port: 8080
 Timeout: 130000
+# Pi Agent requests include system context and tool schemas; only the final user
+# message reaches Needle, but the OpenAI envelope must fit through go-zero.
+MaxBytes: 8388608
 Mode: pro
 
 Needle:

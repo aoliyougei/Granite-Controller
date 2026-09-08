@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.3.2
+
+- Raise both go-zero and Chat Completions request limits from 1 MiB to 8 MiB so Pi Agent envelopes containing system context and tool schemas reach the managed final-user parser.
+- Keep a bounded 8 MiB limit; oversized requests are rejected before Needle inference or Infrastructure execution.
+
 ## v0.3.1
 
 - Accept OpenAI final-user content as either a string or one or more plain `{type: "text", text: "..."}` content parts.

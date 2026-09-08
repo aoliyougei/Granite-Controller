@@ -126,7 +126,7 @@ The response includes category warnings such as:
 ]
 ```
 
-Ignored content is never sent to Needle or copied into warnings/logs. If the final message is not a plain-text user message, the server does not search backward and returns `user_message_required`.
+Ignored content is never sent to Needle or copied into warnings/logs. If the final message is not a plain-text user message, the server does not search backward and returns `user_message_required`. The HTTP envelope limit is 8 MiB so Pi system context and tool schemas can be accepted and ignored safely; larger requests are rejected before model inference or infrastructure execution.
 
 ## Supported Chinese commands
 

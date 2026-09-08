@@ -11,6 +11,8 @@ import (
 	"net/http"
 )
 
+const maxChatRequestBytes = 8 << 20
+
 type OpenAIService interface {
 	State() native.State
 	ModelList() openai.ModelListResponse
@@ -21,7 +23,7 @@ func ChatCompletions(service OpenAIService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestID := requestid.FromRequest(r)
 		var input openai.ChatCompletionRequest
-		if err := DecodeJSON(w, r, &input, 1<<20); err != nil {
+		if err := DecodeJSON(w, r, &input, maxChatRequestBytes); err != nil {
 			WriteError(w, requestID, err)
 			return
 		}

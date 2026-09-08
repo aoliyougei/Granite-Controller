@@ -12,6 +12,7 @@ Name: needle-controller
 Host: 0.0.0.0
 Port: 8080
 Timeout: 130000
+MaxBytes: 8388608
 Needle:
   ModelID: needle-2
   MinConfidence: 0.6
@@ -45,6 +46,9 @@ func TestLoadManagedDefaultsAndExactEnvironmentNames(t *testing.T) {
 	cfg, err := Load(configPath(t, validYAML))
 	if err != nil {
 		t.Fatal(err)
+	}
+	if cfg.MaxBytes != 8388608 {
+		t.Fatalf("MaxBytes=%d", cfg.MaxBytes)
 	}
 	if cfg.Needle.MinConfidence != 0.6 || cfg.Needle.MaxMessageLength != 512 || cfg.InfraControl.BaseURL != "http://infrastructure-control:8080" || cfg.InfraControl.APIToken != "infra-test-value" || cfg.InfraControl.Timeout.String() != "30s" {
 		t.Fatalf("config=%+v", cfg)
