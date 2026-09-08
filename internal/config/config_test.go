@@ -14,92 +14,79 @@ Port: 8080
 Timeout: 130000
 Needle:
   ModelID: needle-2
+  MinConfidence: 0.6
+  MaxMessageLength: 512
   MaxNewTokens: 256
   MaxQueueDepth: 32
-  MaxReplaySteps: 32
   BufferSize: 1048576
   ToolIndexPath: ""
   SlowCall: 30s
+InfraControl:
+  BaseURL: http://infrastructure-control:8080
+  Timeout: 30s
 `
 
 func configPath(t *testing.T, body string) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "config.yaml")
-	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
-		t.Fatal(err)
+	if os.WriteFile(path, []byte(body), 0600) != nil {
+		t.Fatal("write")
 	}
 	return path
 }
+func validEnv(t *testing.T) {
+	t.Helper()
+	t.Setenv("NEEDLE_API_KEY", "needle-test-value")
+	t.Setenv("INFRA_CONTROL_API_TOKEN", "infra-test-value")
+}
 
-func TestLoadNativeDefaults(t *testing.T) {
-	t.Setenv("NEEDLE_API_KEY", "api-test-value")
+func TestLoadManagedDefaultsAndExactEnvironmentNames(t *testing.T) {
+	validEnv(t)
 	cfg, err := Load(configPath(t, validYAML))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.APIKey != "api-test-value" || cfg.Needle.ModelID != "needle-2" {
-		t.Fatalf("config = %+v", cfg)
-	}
-	if cfg.Needle.MaxNewTokens != 256 || cfg.Needle.MaxQueueDepth != 32 || cfg.Needle.MaxReplaySteps != 32 {
-		t.Fatalf("limits = %+v", cfg.Needle)
-	}
-	if cfg.Needle.BufferSize != 1048576 || cfg.Needle.SlowCall.String() != "30s" {
-		t.Fatalf("native config = %+v", cfg.Needle)
+	if cfg.Needle.MinConfidence != 0.6 || cfg.Needle.MaxMessageLength != 512 || cfg.InfraControl.BaseURL != "http://infrastructure-control:8080" || cfg.InfraControl.APIToken != "infra-test-value" || cfg.InfraControl.Timeout.String() != "30s" {
+		t.Fatalf("config=%+v", cfg)
 	}
 }
-
-func TestLoadAppliesNativeEnvironmentOverrides(t *testing.T) {
-	t.Setenv("NEEDLE_API_KEY", "api-test-value")
-	t.Setenv("NEEDLE_MODEL_ID", "needle-custom")
-	t.Setenv("NEEDLE_MAX_NEW_TOKENS", "128")
-	t.Setenv("NEEDLE_MAX_QUEUE_DEPTH", "7")
-	t.Setenv("NEEDLE_MAX_REPLAY_STEPS", "9")
-	t.Setenv("NEEDLE_BUFFER_SIZE", "65536")
-	t.Setenv("NEEDLE_TOOL_INDEX_PATH", "/tmp/needle-index")
-	t.Setenv("NEEDLE_ENGINE_SLOW_CALL", "5s")
+func TestLoadManagedOverrides(t *testing.T) {
+	validEnv(t)
+	t.Setenv("NEEDLE_MIN_CONFIDENCE", "0.8")
+	t.Setenv("NEEDLE_MAX_MESSAGE_LENGTH", "300")
+	t.Setenv("INFRA_CONTROL_API_BASE_URL", "https://infra.example///")
+	t.Setenv("INFRA_CONTROL_TIMEOUT", "10s")
 	cfg, err := Load(configPath(t, validYAML))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Needle.ModelID != "needle-custom" || cfg.Needle.MaxNewTokens != 128 || cfg.Needle.MaxQueueDepth != 7 || cfg.Needle.MaxReplaySteps != 9 || cfg.Needle.BufferSize != 65536 || cfg.Needle.ToolIndexPath != "/tmp/needle-index" || cfg.Needle.SlowCall.String() != "5s" {
-		t.Fatalf("overrides = %+v", cfg.Needle)
+	if cfg.Needle.MinConfidence != 0.8 || cfg.Needle.MaxMessageLength != 300 || cfg.InfraControl.BaseURL != "https://infra.example" || cfg.InfraControl.Timeout.String() != "10s" {
+		t.Fatalf("config=%+v", cfg)
 	}
 }
-
-func TestLoadRejectsInvalidNativeConfiguration(t *testing.T) {
-	tests := []struct {
-		name, key, value, want string
-	}{
-		{"missing api key", "NEEDLE_API_KEY", "", "NEEDLE_API_KEY"},
-		{"empty model", "NEEDLE_MODEL_ID", " ", "NEEDLE_MODEL_ID"},
-		{"zero tokens", "NEEDLE_MAX_NEW_TOKENS", "0", "NEEDLE_MAX_NEW_TOKENS"},
-		{"zero queue", "NEEDLE_MAX_QUEUE_DEPTH", "0", "NEEDLE_MAX_QUEUE_DEPTH"},
-		{"zero replay", "NEEDLE_MAX_REPLAY_STEPS", "0", "NEEDLE_MAX_REPLAY_STEPS"},
-		{"small buffer", "NEEDLE_BUFFER_SIZE", "65535", "NEEDLE_BUFFER_SIZE"},
-		{"large buffer", "NEEDLE_BUFFER_SIZE", "8388609", "NEEDLE_BUFFER_SIZE"},
-		{"zero slow call", "NEEDLE_ENGINE_SLOW_CALL", "0s", "NEEDLE_ENGINE_SLOW_CALL"},
-	}
+func TestLoadRejectsInvalidManagedConfiguration(t *testing.T) {
+	tests := []struct{ name, key, value, want string }{
+		{"missing needle key", "NEEDLE_API_KEY", "", "NEEDLE_API_KEY"}, {"missing infra token", "INFRA_CONTROL_API_TOKEN", "", "INFRA_CONTROL_API_TOKEN"}, {"empty base", "INFRA_CONTROL_API_BASE_URL", "", "INFRA_CONTROL_API_BASE_URL"}, {"scheme", "INFRA_CONTROL_API_BASE_URL", "ftp://infra", "INFRA_CONTROL_API_BASE_URL"}, {"userinfo", "INFRA_CONTROL_API_BASE_URL", "http://u:p@infra", "INFRA_CONTROL_API_BASE_URL"}, {"path", "INFRA_CONTROL_API_BASE_URL", "http://infra/api", "INFRA_CONTROL_API_BASE_URL"}, {"query", "INFRA_CONTROL_API_BASE_URL", "http://infra?q=x", "INFRA_CONTROL_API_BASE_URL"}, {"confidence low", "NEEDLE_MIN_CONFIDENCE", "-0.1", "NEEDLE_MIN_CONFIDENCE"}, {"confidence high", "NEEDLE_MIN_CONFIDENCE", "1.1", "NEEDLE_MIN_CONFIDENCE"}, {"confidence nan", "NEEDLE_MIN_CONFIDENCE", "NaN", "NEEDLE_MIN_CONFIDENCE"}, {"message zero", "NEEDLE_MAX_MESSAGE_LENGTH", "0", "NEEDLE_MAX_MESSAGE_LENGTH"}, {"timeout zero", "INFRA_CONTROL_TIMEOUT", "0s", "INFRA_CONTROL_TIMEOUT"}}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Setenv("NEEDLE_API_KEY", "api-test-value")
+			validEnv(t)
 			t.Setenv(tc.key, tc.value)
 			_, err := Load(configPath(t, validYAML))
 			if err == nil || !strings.Contains(err.Error(), tc.want) {
-				t.Fatalf("error = %v, want %s", err, tc.want)
+				t.Fatalf("error=%v", err)
 			}
-			if strings.Contains(err.Error(), "api-test-value") {
-				t.Fatalf("error leaked key: %v", err)
+			if strings.Contains(err.Error(), "test-value") {
+				t.Fatalf("secret leaked: %v", err)
 			}
 		})
 	}
 }
-
-func TestRemovedEnvironmentVariablesDoNotSatisfyAPIKey(t *testing.T) {
-	for _, key := range []string{"CONTROLLER_API_TOKEN", "NEEDLE_CONTROLLER_API_TOKEN", "NEEDLE_OPENAI_API_KEY", "INFRA_CONTROL_API_TOKEN"} {
-		t.Setenv(key, "legacy-test-value")
-	}
-	_, err := Load(configPath(t, validYAML))
-	if err == nil || !strings.Contains(err.Error(), "NEEDLE_API_KEY") {
-		t.Fatalf("error = %v", err)
+func TestLegacyInfraBaseURLDoesNotSatisfyRequiredName(t *testing.T) {
+	validEnv(t)
+	t.Setenv("INFRA_CONTROL_BASE_URL", "http://legacy")
+	yaml := strings.Replace(validYAML, "  BaseURL: http://infrastructure-control:8080", "  BaseURL: \"\"", 1)
+	_, err := Load(configPath(t, yaml))
+	if err == nil || !strings.Contains(err.Error(), "INFRA_CONTROL_API_BASE_URL") {
+		t.Fatalf("error=%v", err)
 	}
 }

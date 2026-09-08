@@ -1,15 +1,19 @@
 Name: needle-controller
 Host: 0.0.0.0
 Port: 8080
-# go-zero REST timeout in milliseconds; include queue wait plus native inference.
 Timeout: 130000
 Mode: pro
 
 Needle:
   ModelID: needle-2
+  MinConfidence: 0.6
+  MaxMessageLength: 512
   MaxNewTokens: 256
   MaxQueueDepth: 32
-  MaxReplaySteps: 32
   BufferSize: 1048576
   ToolIndexPath: ""
   SlowCall: 30s
+
+InfraControl:
+  BaseURL: ""
+  Timeout: 30s
