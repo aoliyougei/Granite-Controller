@@ -16,4 +16,4 @@ native-test:
 	CGO_ENABLED=1 go test -tags=needle_native ./internal/native -run TestRealNeedle -count=1
 
 image:
-	docker build --platform linux/amd64 -t needle-controller:0.2.0 .
+	docker build --platform linux/amd64 -t needle-controller:0.3.0 .
