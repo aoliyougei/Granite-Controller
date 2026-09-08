@@ -1,40 +1,53 @@
 # needle-controller
 
-A compact OpenAI-compatible tool-calling service backed by the embedded 45M-parameter Needle 2 engine. It runs as one Go process, invokes `libneedle.so` through CGO, and requires no model download at runtime.
+An OpenAI-compatible managed VM-start service powered by the embedded Needle 2 model. Send one Chinese user instruction; the server requires Needle 2 to select the built-in tool, validates the result, and submits one Infrastructure Control request.
 
-> **Needle 2 is not a chat model.** It selects function tools and produces structured arguments. This server never executes tools and does not generate normal free-form answers.
+> **v0.3.0 automatically executes one managed tool: `pve_vm_start`.** Use immutable v0.2.0 instead if you need a general model endpoint that accepts client-provided tools and returns `tool_calls` without execution.
+
+## Request flow
+
+```text
+final Chinese user message
+→ strict input gate and controlled English normalization
+→ embedded Needle 2 semantic tool selection
+→ model result/confidence/grounding/ID validation
+→ one POST to Infrastructure Control
+→ final Chinese OpenAI assistant response
+```
+
+Chinese rules never execute the API directly. A missing, failed, low-confidence, mismatched, ungrounded, or negated Needle decision stops before Infrastructure Control.
 
 ## API
 
 | Method | Path | Authentication | Purpose |
 |---|---|---|---|
 | GET | `/healthz` | public | Go process liveness |
-| GET | `/readyz` | public | Embedded model loading/ready/failed state |
-| GET | `/v1/models` | Bearer `NEEDLE_API_KEY` | OpenAI model discovery |
-| POST | `/v1/chat/completions` | Bearer `NEEDLE_API_KEY` | Dynamic function-tool selection |
+| GET | `/readyz` | public | Embedded Needle model state |
+| GET | `/v1/models` | Bearer `NEEDLE_API_KEY` | Model discovery |
+| POST | `/v1/chat/completions` | Bearer `NEEDLE_API_KEY` | Managed Chinese VM start |
 
 ## Run
 
-The production image supports `linux/amd64` only.
+Linux AMD64 only:
 
 ```bash
 cp .env.example .env
-# Replace NEEDLE_API_KEY, then:
+# Set NEEDLE_API_KEY, INFRA_CONTROL_API_BASE_URL and INFRA_CONTROL_API_TOKEN.
 docker compose up -d --build
 ```
 
-The image runs as `nonroot`, supports a read-only root filesystem, and contains no Python, pip, Go toolchain, or Hugging Face client. The pinned model engine is embedded during the image build, so startup and inference work without network access.
-
-Check startup:
+The image runs as `nonroot`, supports a read-only root filesystem, embeds the hash-pinned Needle Engine 2.0.3, and contains no Python, pip, Go toolchain, or Hugging Face runtime client.
 
 ```bash
 curl -s http://127.0.0.1:8080/healthz
 curl -s http://127.0.0.1:8080/readyz
 ```
 
-`/healthz` returns immediately. `/readyz` returns HTTP 503 with `loading` until the background native probe succeeds, then HTTP 200 with `ready`. A failed load remains `failed` until the container restarts.
+`/healthz` responds immediately. `/readyz` returns 503 while the native model loads, then 200 when ready. Native load failure remains failed until restart.
 
-## Function calling with curl
+## Minimal request
+
+The client does not provide tools:
 
 ```bash
 curl -s http://127.0.0.1:8080/v1/chat/completions \
@@ -42,159 +55,134 @@ curl -s http://127.0.0.1:8080/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{
     "model": "needle-2",
-    "messages": [{"role": "user", "content": "Start VM 3052"}],
-    "tools": [{
-      "type": "function",
-      "function": {
-        "name": "pve_vm_start",
-        "description": "Start a Proxmox VE virtual machine",
-        "parameters": {
-          "type": "object",
-          "properties": {"vmid": {"type": "integer"}},
-          "required": ["vmid"],
-          "additionalProperties": false
-        }
-      }
-    }]
+    "messages": [
+      {"role": "user", "content": "开启 VM 3052"}
+    ]
   }'
 ```
 
-Example response:
+Successful Infrastructure Control HTTP 202 produces:
 
 ```json
 {
   "object": "chat.completion",
   "model": "needle-2",
   "choices": [{
+    "index": 0,
     "message": {
       "role": "assistant",
-      "content": null,
-      "tool_calls": [{
-        "type": "function",
-        "function": {
-          "name": "pve_vm_start",
-          "arguments": "{\"vmid\":3052}"
-        }
-      }]
+      "content": "VM 3052 的启动请求已提交。"
     },
-    "finish_reason": "tool_calls"
+    "finish_reason": "stop"
   }],
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "estimated": true
+  },
   "x_needle": {
+    "type": "call",
+    "tool": "pve_vm_start",
+    "arguments": {"vmid": 3052},
     "confidence": 0.97,
-    "validation": {"ungrounded": [], "negation": false}
+    "validation": {"ungrounded": [], "negation": false},
+    "executed": true,
+    "upstream_status": 202,
+    "warnings": []
   }
 }
 ```
 
-The caller must validate arguments, apply authorization/risk policy, execute `pve_vm_start`, and send the result back in a subsequent request. `docs/api.md` describes one possible external Infrastructure Control tool catalogue; this server does not call those APIs.
+`启动请求已提交` does not mean the VM has completed startup. Query VM state before repeating a request after any ambiguous network/upstream error.
 
-## OpenAI Python SDK
+## Agent clients
 
-```python
-from openai import OpenAI
+Agents may send system prompts, history, tools, tool choice, response format, and sampling parameters. The server accepts but ignores them. It processes only `messages[len(messages)-1]`, which must be a non-empty plain-text `role: "user"` message.
 
-client = OpenAI(
-    base_url="http://127.0.0.1:8080/v1",
-    api_key="your-needle-api-key",
-)
-
-response = client.chat.completions.create(
-    model="needle-2",
-    messages=[{"role": "user", "content": "Weather in Lagos"}],
-    tools=[{
-        "type": "function",
-        "function": {
-            "name": "get_weather",
-            "description": "Get weather for a city",
-            "parameters": {
-                "type": "object",
-                "properties": {"city": {"type": "string"}},
-                "required": ["city"],
-                "additionalProperties": False,
-            },
-        },
-    }],
-)
-print(response.choices[0].message.tool_calls)
-```
-
-## Standard tool loop
-
-After executing a returned tool, resend the full history with its result:
+Example:
 
 ```json
 {
   "model": "needle-2",
   "messages": [
-    {"role": "user", "content": "Weather in Lagos"},
-    {"role": "assistant", "content": null},
-    {"role": "tool", "tool_call_id": "call_...", "content": "{\"city\":\"Lagos\",\"temp_c\":27}"}
+    {"role": "system", "content": "ignored"},
+    {"role": "user", "content": "历史请求也会被忽略"},
+    {"role": "assistant", "content": "ignored history"},
+    {"role": "user", "content": "开启 VM 3052"}
   ],
-  "tools": ["the same function tool definitions"]
+  "tools": [{"malformed": "ignored"}],
+  "tool_choice": "required"
 }
 ```
 
-Each HTTP request is isolated: the server resets, initializes with that request's tools, and replays all user/tool turns. Assistant history is ignored because the native ABI cannot inject assistant turns; deterministic Needle regenerates its own intermediate decisions. The default maximum is 32 replay calls.
+The response includes category warnings such as:
+
+```json
+[
+  "earlier messages were ignored; only the final user message is processed",
+  "client-provided tools were ignored; the managed tool catalog is fixed",
+  "tool_choice was ignored; the managed tool catalog is fixed"
+]
+```
+
+Ignored content is never sent to Needle or copied into warnings/logs. If the final message is not a plain-text user message, the server does not search backward and returns `user_message_required`.
+
+## Supported Chinese commands
+
+Examples:
+
+```text
+开启 3052 这个 VM
+启动虚拟机 3052
+把 VM 3052 开起来
+给 3052 号虚拟机开机
+打开 VM 3052
+```
+
+These normalize internally to `Start VM 3052`, then Needle 2 must independently return exactly `pve_vm_start({"vmid":3052})`.
+
+Rejected before inference include negative/conflicting operations, multiple/no IDs, missing VM semantics, English-only input, and ambiguous `VMware` matches:
+
+```text
+不要开启 VM 3052
+关闭 VM 3052
+重启 VM 3052
+启动 VM 3052 和 3053
+开启 VMware 3052
+```
+
+## Execution safety
+
+All gates are mandatory:
+
+- exactly one Needle function call;
+- function name `pve_vm_start`;
+- exactly one positive integer `vmid` argument;
+- model VM ID equals the ID in the final Chinese input;
+- `confidence >= NEEDLE_MIN_CONFIDENCE` (default `0.6`);
+- complete validation metadata;
+- `ungrounded` is empty;
+- `negation` is false.
+
+The server then sends at most one request:
+
+```http
+POST {INFRA_CONTROL_API_BASE_URL}/api/v1/pve/vms/{vmid}/start
+Authorization: Bearer <INFRA_CONTROL_API_TOKEN>
+```
+
+It does not follow redirects or retry failures. Only HTTP 202 is success. The model cannot provide the URL, method, headers, or credentials.
 
 ## Streaming
 
-Set:
+Add:
 
 ```json
 {"stream": true, "stream_options": {"include_usage": true}}
 ```
 
-The server emits OpenAI `chat.completion.chunk` SSE events and ends with:
-
-```text
-data: [DONE]
-```
-
-Streaming is synthesized after native inference finishes; it does not improve time to first byte.
-
-## Safety signals
-
-Every completion includes `x_needle` when available:
-
-- `confidence`: calibrated score for the base model;
-- `validation.ungrounded`: arguments not grounded in input;
-- `validation.negation`: detected negation;
-- `reasoning`: short model derivation;
-- native throughput and memory metrics;
-- warnings for accepted-but-ignored sampling options.
-
-The server deliberately returns low-confidence and ungrounded calls unchanged. The external agent decides its own threshold and must validate arguments again at the tool execution boundary. High-impact tools require confirmation or another explicit safety policy.
-
-Chinese and mixed-language input are accepted unchanged, but the base model is materially more reliable in English. Domain agents should normalize controlled Chinese business commands before calling this service and verify that returned arguments match the original request.
-
-## Supported request subset
-
-Supported:
-
-- text-only `system`, `developer`, `user`, `assistant`, and `tool` messages;
-- dynamic OpenAI function tools;
-- `tool_choice`: `auto`, `required` (not enforceable), or a named function;
-- `max_tokens` or `max_completion_tokens`;
-- synthesized streaming and optional usage chunk.
-
-Rejected:
-
-- requests without tools;
-- `tool_choice: "none"`;
-- `response_format`;
-- images, audio, files, and non-function tools;
-- `n > 1`;
-- unsupported or ambiguous JSON Schema features.
-
-Sampling parameters such as `temperature`, `top_p`, `seed`, and `stop` are accepted but ignored because Needle decoding is deterministic; warnings report this explicitly.
-
-### JSON Schema allowlist
-
-Supported types: `object`, `array`, `string`, `integer`, `number`, `boolean`.
-
-Supported keywords: `type`, `properties`, `required`, `description`, `enum`, `const`, `items`, numeric/string/array bounds, `pattern`, `format`, `uniqueItems`, and `additionalProperties: false`.
-
-Rejected without lossy conversion: `$ref`, `$defs`, `definitions`, `oneOf`, `anyOf`, `allOf`, `not`, conditionals, recursion, unknown keywords, and free-form `additionalProperties`.
+After model selection and upstream execution finish, the server emits synthesized SSE: assistant role, Chinese content, terminal `stop` metadata, optional usage, and `data: [DONE]`. It never emits a `tool_calls` delta because the tool has already executed. Streaming does not improve time to first byte.
 
 ## Configuration
 
@@ -202,36 +190,36 @@ Rejected without lossy conversion: `$ref`, `$defs`, `definitions`, `oneOf`, `any
 |---|---:|---|
 | `NEEDLE_API_KEY` | yes | — |
 | `NEEDLE_MODEL_ID` | no | `needle-2` |
+| `NEEDLE_MIN_CONFIDENCE` | no | `0.6` |
+| `NEEDLE_MAX_MESSAGE_LENGTH` | no | `512` |
 | `NEEDLE_MAX_NEW_TOKENS` | no | `256` |
 | `NEEDLE_MAX_QUEUE_DEPTH` | no | `32` |
-| `NEEDLE_MAX_REPLAY_STEPS` | no | `32` |
 | `NEEDLE_BUFFER_SIZE` | no | `1048576` |
 | `NEEDLE_TOOL_INDEX_PATH` | no | empty |
 | `NEEDLE_ENGINE_SLOW_CALL` | no | `30s` |
+| `INFRA_CONTROL_API_BASE_URL` | yes | — |
+| `INFRA_CONTROL_API_TOKEN` | yes | — |
+| `INFRA_CONTROL_TIMEOUT` | no | `30s` |
 
-Native calls serialize on one locked OS thread. Queue waiting is cancelable; a native call already in progress cannot be interrupted. Size the go-zero HTTP timeout for queue wait plus inference.
+The Infrastructure base URL must be an HTTP(S) origin without credentials, path, query, or fragment. Tokens never enter Needle prompts or responses.
 
 ## Embedded engine
 
-- Cactus Compute Needle Engine: `2.0.3`
+- Engine: 2.0.3
 - Hugging Face revision: `32e9e3a93b205f786929697446ae669cf0a84579`
 - Wheel SHA-256: `d23df1d0babeb7323dcaf860dfaf833bbd7d2229b205f691c05c9cbc6d3d3653`
 - `libneedle.so` SHA-256: `0d2e125f36269067407ca4460f2d01b9371887366e5949243de9f03d0d93bc78`
 
-See `licenses/THIRD_PARTY_NOTICES.md` and `licenses/Apache-2.0.txt`.
+See `licenses/THIRD_PARTY_NOTICES.md`.
 
 ## Development
 
-Project execution belongs in a Linux AMD64 Docker environment:
+Run project execution in Linux AMD64 Docker:
 
 ```bash
 make test
 make vet
-make race        # requires CGO and /opt/needle/libneedle.so
-make native-test # requires the pinned library
+make race
+make native-test
 make image
 ```
-
-## Migration from v0.1.1
-
-v0.2.0 is intentionally breaking. See `CHANGELOG.md`. Keep using immutable `v0.1.1` if you need the former PVE-specific endpoint that automatically executed Infrastructure Control actions.

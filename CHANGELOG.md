@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.3.0
+
+### Breaking changes
+
+- `/v1/chat/completions` is now managed auto-execution rather than general dynamic tool selection.
+- Client-provided tools, tool choice, system prompts, and history are accepted but ignored.
+- Only the final plain-text user message is processed; no backward search is performed.
+- Responses contain final Chinese assistant text and no `tool_calls`.
+- Added required `INFRA_CONTROL_API_BASE_URL` and `INFRA_CONTROL_API_TOKEN`.
+- Restored server-side Infrastructure Control execution for one built-in tool: `pve_vm_start`.
+- Removed dynamic schema validation and multi-turn tool-result replay.
+
+### Safety
+
+- Chinese rules only validate and normalize input; embedded Needle 2 remains a mandatory semantic selector.
+- Model VM ID, confidence, grounding, negation, call count, and tool name must all pass before execution.
+- Infrastructure requests use a fixed method/path, reject redirects, accept only HTTP 202, and are never retried automatically.
+- Use v0.2.0 for general client-provided OpenAI tools without server execution.
+
 ## v0.2.0
 
 ### Breaking changes
