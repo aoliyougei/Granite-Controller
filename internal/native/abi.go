@@ -7,11 +7,11 @@ type ABI interface {
 }
 
 type NativeError struct {
-	Code string
+	Code    string
 	Message string
-	Fatal bool
-	Cause error
+	Fatal   bool
+	Cause   error
 }
 
-func (e *NativeError) Error() string{return e.Code+": "+e.Message}
-func (e *NativeError) Unwrap() error{return e.Cause}
+func (e *NativeError) Error() string { return e.Code + ": " + e.Message }
+func (e *NativeError) Unwrap() error { return e.Cause }
