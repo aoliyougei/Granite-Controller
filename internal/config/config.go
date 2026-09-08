@@ -29,7 +29,6 @@ type NativeConfig struct {
 	MaxMessageLength int
 	MaxNewTokens     int
 	MaxQueueDepth    int
-	MaxReplaySteps   int
 	BufferSize       int
 	ToolIndexPath    string
 	SlowCall         time.Duration
@@ -91,7 +90,7 @@ func Load(path string) (Config, error) {
 		return Config{}, err
 	}
 	base := strings.TrimRight(strings.TrimSpace(envOr("INFRA_CONTROL_API_BASE_URL", raw.InfraControl.BaseURL)), "/")
-	cfg := Config{RestConf: raw.RestConf, APIKey: os.Getenv("NEEDLE_API_KEY"), Needle: NativeConfig{ModelID: envOr("NEEDLE_MODEL_ID", raw.Needle.ModelID), MinConfidence: confidence, MaxMessageLength: message, MaxNewTokens: maxTokens, MaxQueueDepth: queue, MaxReplaySteps: 1, BufferSize: buffer, ToolIndexPath: envOr("NEEDLE_TOOL_INDEX_PATH", raw.Needle.ToolIndexPath), SlowCall: slow}, InfraControl: InfraControlConfig{BaseURL: base, APIToken: os.Getenv("INFRA_CONTROL_API_TOKEN"), Timeout: upstreamTimeout}}
+	cfg := Config{RestConf: raw.RestConf, APIKey: os.Getenv("NEEDLE_API_KEY"), Needle: NativeConfig{ModelID: envOr("NEEDLE_MODEL_ID", raw.Needle.ModelID), MinConfidence: confidence, MaxMessageLength: message, MaxNewTokens: maxTokens, MaxQueueDepth: queue, BufferSize: buffer, ToolIndexPath: envOr("NEEDLE_TOOL_INDEX_PATH", raw.Needle.ToolIndexPath), SlowCall: slow}, InfraControl: InfraControlConfig{BaseURL: base, APIToken: os.Getenv("INFRA_CONTROL_API_TOKEN"), Timeout: upstreamTimeout}}
 	return cfg, cfg.Validate()
 }
 func (c Config) Validate() error {

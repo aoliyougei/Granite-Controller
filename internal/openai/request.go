@@ -47,6 +47,29 @@ type NativeTool struct {
 	Parameters  json.RawMessage `json:"parameters"`
 }
 
+type ModelListResponse struct {
+	Object string  `json:"object"`
+	Data   []Model `json:"data"`
+}
+
+type Model struct {
+	ID      string `json:"id"`
+	Object  string `json:"object"`
+	Created int64  `json:"created"`
+	OwnedBy string `json:"owned_by"`
+}
+
+type Usage struct {
+	PromptTokens     int  `json:"prompt_tokens"`
+	CompletionTokens int  `json:"completion_tokens"`
+	TotalTokens      int  `json:"total_tokens"`
+	Estimated        bool `json:"estimated"`
+}
+
+func ModelList(modelID string) ModelListResponse {
+	return ModelListResponse{Object: "list", Data: []Model{{ID: modelID, Object: "model", OwnedBy: "cactus-compute"}}}
+}
+
 type SchemaLimits struct {
 	MaxTools            int
 	MaxCatalogBytes     int
