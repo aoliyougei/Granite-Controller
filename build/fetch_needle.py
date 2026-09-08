@@ -6,6 +6,7 @@ import hashlib
 import os
 import shutil
 import tempfile
+import time
 import urllib.request
 import zipfile
 from pathlib import Path, PurePosixPath
@@ -34,7 +35,16 @@ def fetch_and_extract(source: str, wheel_sha256: str, lib_sha256: str, output: P
 
     with tempfile.TemporaryDirectory() as directory:
         wheel = Path(directory) / "needle.whl"
-        with urllib.request.urlopen(source, timeout=120) as response, wheel.open("wb") as handle:
+        response = None
+        for attempt in range(3):
+            try:
+                response = urllib.request.urlopen(source, timeout=120)
+                break
+            except OSError:
+                if attempt == 2:
+                    raise
+                time.sleep(attempt + 1)
+        with response, wheel.open("wb") as handle:
             shutil.copyfileobj(response, handle, 1024 * 1024)
             handle.flush()
             os.fsync(handle.fileno())

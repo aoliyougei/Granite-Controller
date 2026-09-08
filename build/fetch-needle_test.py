@@ -5,6 +5,8 @@ import unittest
 import warnings
 import zipfile
 from pathlib import Path
+from unittest import mock
+from urllib.error import URLError
 
 import fetch_needle
 
@@ -68,6 +70,20 @@ class FetchNeedleTests(unittest.TestCase):
                 wheel = make_wheel(members)
                 with self.assertRaisesRegex(ValueError, "exactly one needle/libneedle.so"):
                     self.extract(wheel)
+
+    def test_retries_transient_download_failures(self):
+        wheel = make_wheel([("needle/libneedle.so", LIB)])
+        response = io.BytesIO(wheel)
+        response.__enter__ = lambda value: value
+        response.__exit__ = lambda *args: None
+        with tempfile.TemporaryDirectory() as directory, \
+             mock.patch("fetch_needle.urllib.request.urlopen", side_effect=[URLError("dns"), URLError("dns"), response]) as opener, \
+             mock.patch("fetch_needle.time.sleep") as sleep:
+            output = Path(directory) / "out"
+            fetch_needle.fetch_and_extract("https://example.invalid/needle.whl", hashlib.sha256(wheel).hexdigest(), hashlib.sha256(LIB).hexdigest(), output)
+            self.assertEqual(opener.call_count, 3)
+            self.assertEqual(sleep.call_count, 2)
+            self.assertEqual((output / "libneedle.so").read_bytes(), LIB)
 
     def test_rejects_zip_path_traversal(self):
         wheel = make_wheel([
