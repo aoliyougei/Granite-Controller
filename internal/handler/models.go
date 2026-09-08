@@ -5,10 +5,9 @@ import (
 	"net/http"
 )
 
-func Health() http.Handler {
+func Models(service OpenAIService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		WriteJSON(w, http.StatusOK, requestid.FromRequest(r), struct {
-			Status string `json:"status"`
-		}{Status: "ok"})
+		requestID := requestid.FromRequest(r)
+		WriteJSON(w, http.StatusOK, requestID, service.ModelList())
 	})
 }

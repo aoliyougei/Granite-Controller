@@ -1,42 +1,37 @@
 syntax = "v1"
 
 info(
-  title: "Needle Controller"
-  desc: "Validated natural-language infrastructure actions"
-  version: "0.1.0"
+  title: "Needle OpenAI Tool Calling Service"
+  desc: "OpenAI-compatible tool selection backed by an embedded Needle engine; tools are never executed"
+  version: "0.2.0"
 )
 
 type HealthResponse {
   Status string `json:"status"`
 }
 
-type DependencyStatus {
-  Needle string `json:"needle"`
-  InfrastructureControl string `json:"infrastructureControl"`
-}
-
 type ReadyResponse {
   Status string `json:"status"`
-  Dependencies DependencyStatus `json:"dependencies"`
+  Model string `json:"model"`
 }
 
-type ChatRequest {
-  Message string `json:"message"`
+type Model {
+  ID string `json:"id"`
+  Object string `json:"object"`
+  Created int64 `json:"created"`
+  OwnedBy string `json:"owned_by"`
 }
 
-type StartVMArguments {
-  VMID int64 `json:"vmid"`
+type ModelListResponse {
+  Object string `json:"object"`
+  Data []Model `json:"data"`
 }
 
-type ChatResponse {
-  Status string `json:"status"`
-  Message string `json:"message"`
-  Tool string `json:"tool"`
-  Arguments StartVMArguments `json:"arguments"`
-  Confidence float64 `json:"confidence"`
-  UpstreamStatus int `json:"upstreamStatus"`
-  RequestID string `json:"requestId"`
-}
+// Chat Completions uses dynamic OpenAI messages/tools JSON. Runtime structs in
+// internal/openai are authoritative because goctl cannot express arbitrary
+// validated JSON Schemas.
+type ChatCompletionRequest {}
+type ChatCompletionResponse {}
 
 @server(group: public)
 service needle-controller {
@@ -47,8 +42,11 @@ service needle-controller {
   get /readyz returns (ReadyResponse)
 }
 
-@server(group: protected)
+@server(group: openai)
 service needle-controller {
-  @handler Chat
-  post /api/v1/chat (ChatRequest) returns (ChatResponse)
+  @handler Models
+  get /v1/models returns (ModelListResponse)
+
+  @handler ChatCompletions
+  post /v1/chat/completions (ChatCompletionRequest) returns (ChatCompletionResponse)
 }

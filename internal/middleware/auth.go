@@ -4,12 +4,10 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/json"
-	"net/http"
-	"strings"
-
 	"needle-controller/internal/apierror"
 	"needle-controller/internal/requestid"
-	"needle-controller/internal/types"
+	"net/http"
+	"strings"
 )
 
 func NewBearerAuth(token string) func(http.Handler) http.Handler {
@@ -27,10 +25,11 @@ func NewBearerAuth(token string) func(http.Handler) http.Handler {
 			valid = valid && subtle.ConstantTimeCompare(digest[:], expected[:]) == 1
 			if !valid {
 				requestID := requestid.FromRequest(r)
+				err := apierror.OpenAIKind("invalid_api_key", "Incorrect API key provided.", "", "authentication_error", http.StatusUnauthorized, nil)
 				w.Header().Set("Content-Type", "application/json")
 				w.Header().Set("X-Request-ID", requestID)
-				w.WriteHeader(http.StatusUnauthorized)
-				_ = json.NewEncoder(w).Encode(types.ErrorResponse{Code: apierror.CodeAuthUnauthorized, Message: "认证失败", RequestID: requestID})
+				w.WriteHeader(err.HTTPStatus)
+				_ = json.NewEncoder(w).Encode(err.Response())
 				return
 			}
 			next.ServeHTTP(w, r)

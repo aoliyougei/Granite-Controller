@@ -32,7 +32,9 @@ func main() {
 	}
 	server := rest.MustNewServer(cfg.RestConf)
 	defer server.Stop()
-	handler.Register(server, svc.NewServiceContext(cfg))
+	serviceContext := svc.NewServiceContext(cfg)
+	defer serviceContext.Dispatcher.Close()
+	handler.Register(server, serviceContext)
 	fmt.Printf("needle-controller listening on %s:%d\n", cfg.Host, cfg.Port)
 	server.Start()
 }

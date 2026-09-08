@@ -1,32 +1,49 @@
 package handler
 
 import (
-	"errors"
-	"net/http"
-
+	"context"
+	"fmt"
 	"needle-controller/internal/apierror"
-	"needle-controller/internal/logic"
+	"needle-controller/internal/native"
+	"needle-controller/internal/openai"
 	"needle-controller/internal/requestid"
-	"needle-controller/internal/types"
+	"net/http"
 )
 
-func Chat(service logic.ChatService) http.Handler {
+type OpenAIService interface {
+	State() native.State
+	ModelList() openai.ModelListResponse
+	Complete(context.Context, openai.ChatCompletionRequest) (openai.ChatCompletionResponse, *apierror.Error)
+}
+
+func ChatCompletions(service OpenAIService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestID := requestid.FromRequest(r)
-		var input types.ChatRequest
-		if err := DecodeJSON(w, r, &input, 8<<10); err != nil {
+		var input openai.ChatCompletionRequest
+		if err := DecodeJSON(w, r, &input, 1<<20); err != nil {
 			WriteError(w, requestID, err)
 			return
 		}
-		response, err := service.Execute(r.Context(), requestID, input.Message)
+		response, err := service.Complete(r.Context(), input)
 		if err != nil {
-			var typed *apierror.Error
-			if !errors.As(err, &typed) {
-				typed = apierror.New(apierror.CodeInternal, "内部服务错误", http.StatusInternalServerError, err)
+			if err.Code == "request_canceled" {
+				return
 			}
-			WriteError(w, requestID, typed)
+			WriteError(w, requestID, err)
 			return
 		}
-		WriteJSON(w, http.StatusAccepted, requestID, response)
+		if !input.Stream {
+			WriteJSON(w, http.StatusOK, requestID, response)
+			return
+		}
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+		w.Header().Set("X-Request-ID", requestID)
+		w.WriteHeader(http.StatusOK)
+		includeUsage := input.StreamOptions != nil && input.StreamOptions.IncludeUsage
+		for _, event := range openai.StreamEvents(response, includeUsage) {
+			_, _ = fmt.Fprintf(w, "data: %s\n\n", event.Data)
+		}
 	})
 }

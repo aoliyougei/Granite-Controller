@@ -1,39 +1,24 @@
 package handler
 
 import (
-	"context"
-	"net/http"
-	"sync"
-
+	"needle-controller/internal/native"
 	"needle-controller/internal/requestid"
-	"needle-controller/internal/types"
+	"net/http"
 )
 
-type ReadyService interface {
-	Ready(context.Context) error
+type readyResponse struct {
+	Status string `json:"status"`
+	Model  string `json:"model"`
 }
 
-func Ready(needle, infra ReadyService) http.Handler {
+func Ready(service interface{ State() native.State }) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var wg sync.WaitGroup
-		var needleErr, infraErr error
-		wg.Add(2)
-		go func() { defer wg.Done(); needleErr = needle.Ready(r.Context()) }()
-		go func() { defer wg.Done(); infraErr = infra.Ready(r.Context()) }()
-		wg.Wait()
-
+		state := service.State()
 		status := http.StatusOK
-		body := types.ReadyResponse{Status: "ready", RequestID: requestid.FromRequest(r), Dependencies: types.DependencyStatus{Needle: "ready", InfrastructureControl: "ready"}}
-		if needleErr != nil {
-			body.Status = "unavailable"
-			body.Dependencies.Needle = "unavailable"
+		if state != native.StateReady {
 			status = http.StatusServiceUnavailable
 		}
-		if infraErr != nil {
-			body.Status = "unavailable"
-			body.Dependencies.InfrastructureControl = "unavailable"
-			status = http.StatusServiceUnavailable
-		}
-		WriteJSON(w, status, body.RequestID, body)
+		requestID := requestid.FromRequest(r)
+		WriteJSON(w, status, requestID, readyResponse{Status: string(state), Model: string(state)})
 	})
 }

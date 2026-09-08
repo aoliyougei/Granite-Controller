@@ -6,61 +6,39 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"needle-controller/internal/types"
+	"needle-controller/internal/apierror"
 )
 
-func TestBearerAuthRejectsInvalidCredentialsIdentically(t *testing.T) {
-	tests := []struct {
-		name    string
-		headers []string
-	}{
-		{"missing", nil},
-		{"wrong scheme", []string{"Basic abc"}},
-		{"empty", []string{"Bearer "}},
-		{"wrong", []string{"Bearer wrong"}},
-		{"multiple", []string{"Bearer controller-test-value", "Bearer controller-test-value"}},
-		{"extra whitespace", []string{"Bearer  controller-test-value"}},
-	}
-	var first types.ErrorResponse
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			called := false
-			next := http.HandlerFunc(func(http.ResponseWriter, *http.Request) { called = true })
-			handler := NewBearerAuth("controller-test-value")(next)
-			r := httptest.NewRequest(http.MethodPost, "/api/v1/chat", nil)
-			r.Header.Set("X-Request-ID", "req-auth")
-			for _, value := range tt.headers {
-				r.Header.Add("Authorization", value)
-			}
-			w := httptest.NewRecorder()
-			handler.ServeHTTP(w, r)
-			if called || w.Code != http.StatusUnauthorized {
-				t.Fatalf("called=%v status=%d", called, w.Code)
-			}
-			var got types.ErrorResponse
-			if err := json.NewDecoder(w.Body).Decode(&got); err != nil {
-				t.Fatal(err)
-			}
-			if got.Code != "AUTH_UNAUTHORIZED" || got.RequestID != "req-auth" {
-				t.Fatalf("response=%+v", got)
-			}
-			if first.Code == "" {
-				first = got
-			} else if got != first {
-				t.Fatalf("response differs: %+v vs %+v", got, first)
-			}
-		})
+func TestBearerAuthRejectsInvalidCredentialsWithOpenAIEnvelope(t *testing.T) {
+	tests := [][]string{nil, {"Basic abc"}, {"Bearer "}, {"Bearer wrong"}, {"Bearer api-test-value", "Bearer api-test-value"}, {"Bearer  api-test-value"}}
+	for _, headers := range tests {
+		called := false
+		next := http.HandlerFunc(func(http.ResponseWriter, *http.Request) { called = true })
+		handler := NewBearerAuth("api-test-value")(next)
+		r := httptest.NewRequest(http.MethodGet, "/v1/models", nil)
+		for _, value := range headers {
+			r.Header.Add("Authorization", value)
+		}
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, r)
+		if called || w.Code != 401 {
+			t.Fatalf("headers=%v called=%v status=%d", headers, called, w.Code)
+		}
+		var got apierror.Response
+		if json.NewDecoder(w.Body).Decode(&got) != nil || got.Error.Code != "invalid_api_key" || got.Error.Type != "authentication_error" || got.Error.Param != nil {
+			t.Fatalf("body=%s", w.Body.String())
+		}
 	}
 }
 
 func TestBearerAuthAllowsExactToken(t *testing.T) {
 	called := false
-	handler := NewBearerAuth("controller-test-value")(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { called = true; w.WriteHeader(http.StatusNoContent) }))
-	r := httptest.NewRequest(http.MethodPost, "/api/v1/chat", nil)
-	r.Header.Set("Authorization", "Bearer controller-test-value")
+	handler := NewBearerAuth("api-test-value")(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { called = true; w.WriteHeader(204) }))
+	r := httptest.NewRequest("GET", "/v1/models", nil)
+	r.Header.Set("Authorization", "Bearer api-test-value")
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, r)
-	if !called || w.Code != http.StatusNoContent {
+	if !called || w.Code != 204 {
 		t.Fatalf("called=%v status=%d", called, w.Code)
 	}
 }
