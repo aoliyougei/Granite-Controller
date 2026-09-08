@@ -36,6 +36,7 @@ type Dispatcher struct {
 	mu        sync.RWMutex
 	state     State
 	failure   string
+	closed    bool
 }
 
 func NewDispatcher(factory ExecutorFactory, probe Request, queueDepth int) *Dispatcher {
@@ -77,21 +78,29 @@ func (d *Dispatcher) loop(factory ExecutorFactory, probe Request) {
 }
 
 func (d *Dispatcher) Submit(ctx context.Context, request Request) (Envelope, error) {
-	if d.State() != StateReady {
+	d.mu.Lock()
+	if d.closed {
+		d.mu.Unlock()
+		return Envelope{}, ErrClosed
+	}
+	if d.state != StateReady {
+		d.mu.Unlock()
 		return Envelope{}, ErrNotReady
 	}
 	response := make(chan result, 1)
 	task := job{ctx: ctx, request: request, response: response}
 	select {
-	case <-d.stop:
-		return Envelope{}, ErrClosed
 	case d.queue <- task:
+		d.mu.Unlock()
 	default:
+		d.mu.Unlock()
 		return Envelope{}, ErrQueueFull
 	}
 	select {
 	case <-ctx.Done():
 		return Envelope{}, ctx.Err()
+	case <-d.stop:
+		return Envelope{}, ErrClosed
 	case got := <-response:
 		return got.envelope, got.err
 	}
@@ -107,7 +116,15 @@ func (d *Dispatcher) setState(state State, failure string) {
 	d.failure = failure
 }
 func (d *Dispatcher) fail(summary string) { d.setState(StateFailed, summary) }
-func (d *Dispatcher) Close()              { d.closeOnce.Do(func() { close(d.stop); <-d.done }) }
+func (d *Dispatcher) Close() {
+	d.closeOnce.Do(func() {
+		d.mu.Lock()
+		d.closed = true
+		close(d.stop)
+		d.mu.Unlock()
+		<-d.done
+	})
+}
 
 func isFatal(err error) bool {
 	var nativeErr *NativeError

@@ -95,9 +95,19 @@ func TestEngineRejectsNativeFailuresAndUnsafeOutput(t *testing.T) {
 	}
 }
 
+func TestEngineRejectsNativeErrorEnvelope(t *testing.T) {
+	response := append([]byte(`{"type":"respond","success":false,"error":"failed","error_code":"decode"}`), 0)
+	engine := NewEngine(&fakeABI{responses: [][]byte{response}}, 256)
+	_, err := engine.Execute(Request{ToolsJSON: []byte(`[]`), MaxNewTokens: 1, Turns: []Turn{{Kind: TurnUser, Text: "x"}}})
+	var nativeErr *NativeError
+	if !errors.As(err, &nativeErr) || nativeErr.Code != "native_engine_error" {
+		t.Fatalf("error=%+v", err)
+	}
+}
+
 func TestEngineClearsBufferBetweenCalls(t *testing.T) {
 	long := append([]byte(`{"type":"respond","success":true,"function_calls":[]}`), 0)
-	short := append([]byte(`{"type":"respond","function_calls":[]}`), 0)
+	short := append([]byte(`{"type":"respond","success":true,"function_calls":[]}`), 0)
 	abi := &fakeABI{responses: [][]byte{long, short}}
 	engine := NewEngine(abi, 128)
 	request := Request{ToolsJSON: []byte(`[]`), MaxNewTokens: 1, Turns: []Turn{{Kind: TurnUser, Text: "x"}}}

@@ -36,6 +36,10 @@ func (e *Engine) Execute(request Request) (Envelope, error) {
 			e.abi.Reset()
 			return Envelope{}, &NativeError{Code: "native_output_invalid", Message: "native output is not valid JSON", Cause: err}
 		}
+		if !result.Success {
+			e.abi.Reset()
+			return Envelope{}, &NativeError{Code: "native_engine_error", Message: "native engine reported an error"}
+		}
 		if err := validateEnvelope(result, request.ToolNames); err != nil {
 			e.abi.Reset()
 			return Envelope{}, &NativeError{Code: "native_output_invalid", Message: err.Error()}

@@ -54,6 +54,7 @@ func TestSchemaRejectsUnsupportedOrMalformedTools(t *testing.T) {
 		{"object additional", requestWithTools(functionTool("x", `{"type":"object","additionalProperties":{"type":"string"}}`)), DefaultSchemaLimits()},
 		{"array missing items", requestWithTools(functionTool("x", `{"type":"array"}`)), DefaultSchemaLimits()},
 		{"bad required", requestWithTools(functionTool("x", `{"type":"object","properties":{"a":{"type":"string"}},"required":["missing"]}`)), DefaultSchemaLimits()},
+		{"required without properties", requestWithTools(functionTool("x", `{"type":"object","required":["a"]}`)), DefaultSchemaLimits()},
 		{"too deep", requestWithTools(functionTool("x", deep)), SchemaLimits{MaxTools: 64, MaxCatalogBytes: 1 << 20, MaxDescriptionRunes: 100, MaxDepth: 2, MaxProperties: 64}},
 		{"too many properties", requestWithTools(functionTool("x", manyProps)), SchemaLimits{MaxTools: 64, MaxCatalogBytes: 1 << 20, MaxDescriptionRunes: 100, MaxDepth: 8, MaxProperties: 1}},
 		{"malformed", requestWithTools(functionTool("x", `{`)), DefaultSchemaLimits()},
@@ -81,6 +82,7 @@ func TestToolChoiceSafeSubset(t *testing.T) {
 		{"named", `{"type":"function","function":{"name":"two"}}`, 1, "two", "", ""},
 		{"none", `"none"`, 0, "", "", "tools_required"},
 		{"unknown", `{"type":"function","function":{"name":"missing"}}`, 0, "", "", "invalid_tool_choice"},
+		{"named trailing", `{"type":"function","function":{"name":"two"}} {}`, 0, "", "", "invalid_tool_choice"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {

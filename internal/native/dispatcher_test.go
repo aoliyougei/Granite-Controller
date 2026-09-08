@@ -139,6 +139,23 @@ func TestDispatcherSerializesQueuesAndCancels(t *testing.T) {
 	d.Close()
 }
 
+func TestDispatcherCloseRejectsNewSubmissions(t *testing.T) {
+	f := &fakeExecutor{}
+	d := NewDispatcher(func() (Executor, error) { return f, nil }, probeRequest(), 1)
+	waitState(t, d, StateReady)
+	d.Close()
+	done := make(chan error, 1)
+	go func() { _, err := d.Submit(context.Background(), Request{}); done <- err }()
+	select {
+	case err := <-done:
+		if !errors.Is(err, ErrClosed) {
+			t.Fatalf("error=%v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("Submit blocked after Close")
+	}
+}
+
 func TestDispatcherFatalExecutionMarksFailed(t *testing.T) {
 	f := &fakeExecutor{}
 	d := NewDispatcher(func() (Executor, error) { return f, nil }, probeRequest(), 1)

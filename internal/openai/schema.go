@@ -80,6 +80,10 @@ func applyToolChoice(tools []NativeTool, raw json.RawMessage) ([]NativeTool, []s
 	if decoder.Decode(&named) != nil || named.Type != "function" || named.Function.Name == "" {
 		return nil, nil, toolError("invalid_tool_choice", "invalid named tool_choice")
 	}
+	var trailing any
+	if err := decoder.Decode(&trailing); err != io.EOF {
+		return nil, nil, toolError("invalid_tool_choice", "invalid named tool_choice")
+	}
 	for _, candidate := range tools {
 		if candidate.Name == named.Function.Name {
 			return []NativeTool{candidate}, nil, nil
@@ -176,6 +180,9 @@ func validateSchemaObject(schema map[string]any, depth int, limits SchemaLimits)
 	}
 	properties, hasProperties := schema["properties"]
 	if typeName == "object" {
+		if _, hasRequired := schema["required"]; hasRequired && !hasProperties {
+			return fmt.Errorf("required needs object properties")
+		}
 		if hasProperties {
 			object, ok := properties.(map[string]any)
 			if !ok || len(object) > limits.MaxProperties {
