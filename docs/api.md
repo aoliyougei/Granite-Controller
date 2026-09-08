@@ -1,4 +1,6 @@
-# REST API
+# External Infrastructure Control REST API
+
+> **This document is an external-agent tool catalogue, not the API exposed or executed by `needle-controller` v0.2.0.** An agent may translate these operations into OpenAI function tools, send those definitions to `/v1/chat/completions`, validate the returned arguments and `x_needle` signals, then call Infrastructure Control itself with its own credentials and risk controls. `needle-controller` never sends any request described below.
 
 Infrastructure Control exposes a go-zero REST API on `INFRA_CONTROL_HTTP_HOST:INFRA_CONTROL_HTTP_PORT`. All responses are JSON except raw JSONL task-log downloads and SSE streams.
 
