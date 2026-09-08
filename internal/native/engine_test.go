@@ -95,6 +95,19 @@ func TestEngineRejectsNativeFailuresAndUnsafeOutput(t *testing.T) {
 	}
 }
 
+func TestValidationTracksRequiredFieldPresence(t *testing.T) {
+	var present, missing Validation
+	if err := json.Unmarshal([]byte(`{"ungrounded":[],"negation":false}`), &present); err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal([]byte(`{}`), &missing); err != nil {
+		t.Fatal(err)
+	}
+	if !present.UngroundedPresent || !present.NegationPresent || missing.UngroundedPresent || missing.NegationPresent {
+		t.Fatalf("present=%+v missing=%+v", present, missing)
+	}
+}
+
 func TestEngineRejectsNativeErrorEnvelope(t *testing.T) {
 	response := append([]byte(`{"type":"respond","success":false,"error":"failed","error_code":"decode"}`), 0)
 	engine := NewEngine(&fakeABI{responses: [][]byte{response}}, 256)

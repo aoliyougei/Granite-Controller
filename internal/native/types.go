@@ -43,6 +43,30 @@ type FunctionCall struct {
 }
 
 type Validation struct {
-	Ungrounded []string `json:"ungrounded"`
-	Negation   bool     `json:"negation"`
+	Ungrounded        []string `json:"ungrounded"`
+	Negation          bool     `json:"negation"`
+	UngroundedPresent bool     `json:"-"`
+	NegationPresent   bool     `json:"-"`
+}
+
+func (v *Validation) UnmarshalJSON(data []byte) error {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	raw, ok := fields["ungrounded"]
+	if ok {
+		v.UngroundedPresent = true
+		if err := json.Unmarshal(raw, &v.Ungrounded); err != nil {
+			return err
+		}
+	}
+	raw, ok = fields["negation"]
+	if ok {
+		v.NegationPresent = true
+		if err := json.Unmarshal(raw, &v.Negation); err != nil {
+			return err
+		}
+	}
+	return nil
 }

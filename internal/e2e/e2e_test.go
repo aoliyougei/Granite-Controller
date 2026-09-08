@@ -27,7 +27,7 @@ func (f *fakeNative) Submit(_ context.Context, r native.Request) (native.Envelop
 	f.calls++
 	f.request = r
 	confidence := 0.9
-	return native.Envelope{Type: "call", Success: true, Confidence: &confidence, Validation: native.Validation{Ungrounded: []string{}}, FunctionCalls: []native.FunctionCall{{Name: "pve_vm_start", Arguments: map[string]json.RawMessage{"vmid": json.RawMessage(`3052`)}}}}, nil
+	return native.Envelope{Type: "call", Success: true, Confidence: &confidence, Validation: native.Validation{Ungrounded: []string{}, UngroundedPresent: true, NegationPresent: true}, FunctionCalls: []native.FunctionCall{{Name: "pve_vm_start", Arguments: map[string]json.RawMessage{"vmid": json.RawMessage(`3052`)}}}}, nil
 }
 
 type fakeInfra struct {

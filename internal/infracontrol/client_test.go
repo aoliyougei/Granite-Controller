@@ -57,6 +57,18 @@ func TestStartVMNeverRetriesFailures(t *testing.T) {
 		})
 	}
 }
+func TestStartVMRejectsOversizedResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(202)
+		_, _ = w.Write([]byte(strings.Repeat("x", responseLimit+1)))
+	}))
+	defer server.Close()
+	client := NewClient(config.InfraControlConfig{BaseURL: server.URL, APIToken: "token", Timeout: time.Second})
+	_, err := client.StartVM(context.Background(), "req", 3052)
+	if err == nil || err.Code != "upstream_request_failed" {
+		t.Fatalf("error=%+v", err)
+	}
+}
 func TestStartVMRejectsRedirectWithoutFollowing(t *testing.T) {
 	var destination atomic.Int32
 	target := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { destination.Add(1) }))

@@ -42,6 +42,9 @@ func ValidateCall(command Command, envelope native.Envelope, minConfidence float
 	if confidence == nil || math.IsNaN(*confidence) || math.IsInf(*confidence, 0) || *confidence < 0 || *confidence > 1 || *confidence < minConfidence {
 		return ValidatedCall{}, validationError("low_confidence", "Needle confidence is too low for managed execution.")
 	}
+	if !envelope.Validation.UngroundedPresent || !envelope.Validation.NegationPresent {
+		return ValidatedCall{}, validationError("managed_tool_validation_failed", "Needle safety metadata is incomplete.")
+	}
 	if len(envelope.Validation.Ungrounded) != 0 {
 		return ValidatedCall{}, validationError("ungrounded_arguments", "Needle returned ungrounded managed arguments.")
 	}

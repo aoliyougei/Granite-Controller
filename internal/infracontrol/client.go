@@ -45,14 +45,15 @@ func (c *Client) StartVM(ctx context.Context, requestID string, vmid int64) (Res
 		return Result{}, requestFailed(err)
 	}
 	defer response.Body.Close()
-	if _, err = io.Copy(io.Discard, io.LimitReader(response.Body, responseLimit+1)); err != nil {
-		return Result{}, requestFailed(err)
+	read, readErr := io.Copy(io.Discard, io.LimitReader(response.Body, responseLimit+1))
+	if response.StatusCode == http.StatusUnauthorized || response.StatusCode == http.StatusForbidden {
+		return Result{}, apierror.OpenAI("upstream_auth_failed", "Infrastructure authentication failed.", "", http.StatusBadGateway, nil)
+	}
+	if readErr != nil || read > responseLimit {
+		return Result{}, requestFailed(fmt.Errorf("upstream response is invalid or too large"))
 	}
 	if response.StatusCode == http.StatusAccepted {
 		return Result{Status: response.StatusCode, UpstreamRequestID: response.Header.Get("X-Request-ID")}, nil
-	}
-	if response.StatusCode == http.StatusUnauthorized || response.StatusCode == http.StatusForbidden {
-		return Result{}, apierror.OpenAI("upstream_auth_failed", "Infrastructure authentication failed.", "", http.StatusBadGateway, nil)
 	}
 	return Result{}, requestFailed(fmt.Errorf("upstream status %d", response.StatusCode))
 }
