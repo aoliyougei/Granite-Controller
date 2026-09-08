@@ -57,6 +57,7 @@ func TestSchemaRejectsUnsupportedOrMalformedTools(t *testing.T) {
 		{"required without properties", requestWithTools(functionTool("x", `{"type":"object","required":["a"]}`)), DefaultSchemaLimits()},
 		{"too deep", requestWithTools(functionTool("x", deep)), SchemaLimits{MaxTools: 64, MaxCatalogBytes: 1 << 20, MaxDescriptionRunes: 100, MaxDepth: 2, MaxProperties: 64}},
 		{"too many properties", requestWithTools(functionTool("x", manyProps)), SchemaLimits{MaxTools: 64, MaxCatalogBytes: 1 << 20, MaxDescriptionRunes: 100, MaxDepth: 8, MaxProperties: 1}},
+		{"duplicate key after null", requestWithTools(functionTool("x", `{"type":null,"type":"object"}`)), DefaultSchemaLimits()},
 		{"malformed", requestWithTools(functionTool("x", `{`)), DefaultSchemaLimits()},
 	}
 	for _, tc := range tests {

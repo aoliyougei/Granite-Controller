@@ -123,15 +123,17 @@ func parseJSONValue(decoder *json.Decoder, depth int, limits SchemaLimits) (any,
 			return nil, fmt.Errorf("schema nesting is too deep")
 		}
 		object := map[string]any{}
+		seen := map[string]bool{}
 		for decoder.More() {
 			keyToken, err := decoder.Token()
 			if err != nil {
 				return nil, fmt.Errorf("invalid schema object")
 			}
 			key, ok := keyToken.(string)
-			if !ok || object[key] != nil {
+			if !ok || seen[key] {
 				return nil, fmt.Errorf("schema contains duplicate keys")
 			}
+			seen[key] = true
 			value, err := parseJSONValue(decoder, depth+1, limits)
 			if err != nil {
 				return nil, err
