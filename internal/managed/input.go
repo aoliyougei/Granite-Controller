@@ -3,11 +3,12 @@ package managed
 import (
 	"bytes"
 	"encoding/json"
-	"needle-controller/internal/apierror"
-	"needle-controller/internal/openai"
 	"net/http"
 	"strings"
 	"unicode/utf8"
+
+	"needle-controller/internal/apierror"
+	"needle-controller/internal/openai"
 )
 
 type Input struct {
@@ -23,8 +24,8 @@ func ExtractInput(req openai.ChatCompletionRequest, maxRunes int) (Input, *apier
 	if last.Role != "user" {
 		return Input{}, userMessageError()
 	}
-	var value string
-	if len(bytes.TrimSpace(last.Content)) == 0 || json.Unmarshal(last.Content, &value) != nil {
+	value, ok := finalUserText(last.Content)
+	if !ok {
 		return Input{}, userMessageError()
 	}
 	value = strings.TrimSpace(value)
@@ -58,6 +59,33 @@ func ExtractInput(req openai.ChatCompletionRequest, maxRunes int) (Input, *apier
 	}
 	return Input{Original: value, Warnings: warnings}, nil
 }
+func finalUserText(content json.RawMessage) (string, bool) {
+	if len(bytes.TrimSpace(content)) == 0 {
+		return "", false
+	}
+	var value string
+	if json.Unmarshal(content, &value) == nil {
+		return value, true
+	}
+	var parts []struct {
+		Type string `json:"type"`
+		Text string `json:"text"`
+	}
+	decoder := json.NewDecoder(bytes.NewReader(content))
+	decoder.DisallowUnknownFields()
+	if decoder.Decode(&parts) != nil || len(parts) == 0 {
+		return "", false
+	}
+	var joined strings.Builder
+	for _, part := range parts {
+		if part.Type != "text" || part.Text == "" {
+			return "", false
+		}
+		joined.WriteString(part.Text)
+	}
+	return joined.String(), true
+}
+
 func userMessageError() *apierror.Error {
 	return apierror.OpenAI("user_message_required", "A non-empty final user text message is required.", "messages", http.StatusBadRequest, nil)
 }

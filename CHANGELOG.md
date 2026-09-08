@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.3.1
+
+- Accept OpenAI final-user content as either a string or one or more plain `{type: "text", text: "..."}` content parts.
+- Join multiple plain text parts in order for Pi and other OpenAI-compatible Agent clients.
+- Continue to reject empty parts, images, audio, files, unknown part types, and non-text content without falling back to historical user messages.
+
 ## v0.3.0
 
 ### Breaking changes

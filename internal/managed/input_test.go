@@ -30,8 +30,16 @@ func TestExtractInputUsesOnlyFinalUserAndWarnsByCategory(t *testing.T) {
 		}
 	}
 }
+func TestExtractInputAcceptsAndJoinsPlainTextParts(t *testing.T) {
+	req := openai.ChatCompletionRequest{Messages: []openai.Message{{Role: "user", Content: json.RawMessage(`[{"type":"text","text":"开启 VM "},{"type":"text","text":"3052"}]`)}}}
+	got, err := ExtractInput(req, 512)
+	if err != nil || got.Original != "开启 VM 3052" {
+		t.Fatalf("input=%+v error=%v", got, err)
+	}
+}
+
 func TestExtractInputRejectsInvalidFinalMessageWithoutFallback(t *testing.T) {
-	tests := []openai.Message{{Role: "assistant", Content: raw("x")}, {Role: "tool", Content: raw("x")}, {Role: "user", Content: nil}, {Role: "user", Content: raw("  ")}, {Role: "user", Content: json.RawMessage(`{"text":"x"}`)}, {Role: "user", Content: json.RawMessage(`[{"type":"text","text":"x"}]`)}}
+	tests := []openai.Message{{Role: "assistant", Content: raw("x")}, {Role: "tool", Content: raw("x")}, {Role: "user", Content: nil}, {Role: "user", Content: raw("  ")}, {Role: "user", Content: json.RawMessage(`{"text":"x"}`)}, {Role: "user", Content: json.RawMessage(`[]`)}, {Role: "user", Content: json.RawMessage(`[{"type":"image_url","image_url":{"url":"x"}}]`)}, {Role: "user", Content: json.RawMessage(`[{"type":"audio","data":"x"}]`)}, {Role: "user", Content: json.RawMessage(`[{"type":"file","file_id":"x"}]`)}, {Role: "user", Content: json.RawMessage(`[{"type":"unknown","text":"x"}]`)}, {Role: "user", Content: json.RawMessage(`[{"type":"text","text":""}]`)}}
 	for _, last := range tests {
 		req := openai.ChatCompletionRequest{Model: "needle-2", Messages: []openai.Message{{Role: "user", Content: raw("开启 VM 3052")}, last}}
 		_, err := ExtractInput(req, 512)

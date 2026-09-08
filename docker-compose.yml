@@ -2,7 +2,7 @@ services:
   needle-controller:
     build:
       context: .
-    image: needle-controller:0.3.0
+    image: needle-controller:0.3.1
     platform: linux/amd64
     ports:
       - "${CONTROLLER_PORT:-8080}:8080"

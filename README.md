@@ -98,7 +98,7 @@ Successful Infrastructure Control HTTP 202 produces:
 
 ## Agent clients
 
-Agents may send system prompts, history, tools, tool choice, response format, and sampling parameters. The server accepts but ignores them. It processes only `messages[len(messages)-1]`, which must be a non-empty plain-text `role: "user"` message.
+Agents may send system prompts, history, tools, tool choice, response format, and sampling parameters. The server accepts but ignores them. It processes only `messages[len(messages)-1]`, which must be a non-empty plain-text `role: "user"` message. The final content may be a string or one or more OpenAI `{type: "text", text: "..."}` parts; text parts are joined in order. Images, audio, files, unknown parts, and empty parts are rejected.
 
 Example:
 
