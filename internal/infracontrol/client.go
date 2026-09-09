@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"needle-controller/internal/apierror"
-	"needle-controller/internal/config"
+	"github.com/aoliyougei/granite-controller/internal/apierror"
+	"github.com/aoliyougei/granite-controller/internal/config"
 	"net/http"
 	"strconv"
 )

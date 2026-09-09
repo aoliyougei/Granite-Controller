@@ -1,10 +1,10 @@
 package svc
 
 import (
-	"needle-controller/internal/config"
-	"needle-controller/internal/infracontrol"
-	"needle-controller/internal/managed"
-	"needle-controller/internal/native"
+	"github.com/aoliyougei/granite-controller/internal/config"
+	"github.com/aoliyougei/granite-controller/internal/infracontrol"
+	"github.com/aoliyougei/granite-controller/internal/managed"
+	"github.com/aoliyougei/granite-controller/internal/native"
 )
 
 type ServiceContext struct {

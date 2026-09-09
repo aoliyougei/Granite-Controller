@@ -2,7 +2,7 @@ package managed
 
 import (
 	"encoding/json"
-	"needle-controller/internal/infracontrol"
+	"github.com/aoliyougei/granite-controller/internal/infracontrol"
 	"strings"
 	"testing"
 )

@@ -2,7 +2,7 @@ package infracontrol
 
 import (
 	"context"
-	"needle-controller/internal/config"
+	"github.com/aoliyougei/granite-controller/internal/config"
 	"net/http"
 	"net/http/httptest"
 	"strings"

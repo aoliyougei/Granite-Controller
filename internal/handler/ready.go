@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"needle-controller/internal/native"
-	"needle-controller/internal/requestid"
+	"github.com/aoliyougei/granite-controller/internal/native"
+	"github.com/aoliyougei/granite-controller/internal/requestid"
 	"net/http"
 )
 

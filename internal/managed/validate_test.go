@@ -3,7 +3,7 @@ package managed
 import (
 	"encoding/json"
 	"math"
-	"needle-controller/internal/native"
+	"github.com/aoliyougei/granite-controller/internal/native"
 	"testing"
 )
 

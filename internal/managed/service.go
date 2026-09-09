@@ -3,11 +3,11 @@ package managed
 import (
 	"context"
 	"errors"
-	"needle-controller/internal/apierror"
-	"needle-controller/internal/config"
-	"needle-controller/internal/infracontrol"
-	"needle-controller/internal/native"
-	"needle-controller/internal/openai"
+	"github.com/aoliyougei/granite-controller/internal/apierror"
+	"github.com/aoliyougei/granite-controller/internal/config"
+	"github.com/aoliyougei/granite-controller/internal/infracontrol"
+	"github.com/aoliyougei/granite-controller/internal/native"
+	"github.com/aoliyougei/granite-controller/internal/openai"
 	"net/http"
 )
 

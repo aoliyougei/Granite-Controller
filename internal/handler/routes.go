@@ -2,8 +2,8 @@ package handler
 
 import (
 	"github.com/zeromicro/go-zero/rest"
-	"needle-controller/internal/middleware"
-	"needle-controller/internal/svc"
+	"github.com/aoliyougei/granite-controller/internal/middleware"
+	"github.com/aoliyougei/granite-controller/internal/svc"
 	"net/http"
 )
 

@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"needle-controller/internal/requestid"
+	"github.com/aoliyougei/granite-controller/internal/requestid"
 	"net/http"
 )
 

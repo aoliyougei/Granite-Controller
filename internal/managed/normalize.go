@@ -2,7 +2,7 @@ package managed
 
 import (
 	"fmt"
-	"needle-controller/internal/apierror"
+	"github.com/aoliyougei/granite-controller/internal/apierror"
 	"net/http"
 	"regexp"
 	"strconv"

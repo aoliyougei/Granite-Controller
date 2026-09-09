@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"needle-controller/internal/apierror"
+	"github.com/aoliyougei/granite-controller/internal/apierror"
 )
 
 func TestBearerAuthRejectsInvalidCredentialsWithOpenAIEnvelope(t *testing.T) {

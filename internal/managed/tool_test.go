@@ -2,8 +2,8 @@ package managed
 
 import (
 	"encoding/json"
-	"needle-controller/internal/config"
-	"needle-controller/internal/native"
+	"github.com/aoliyougei/granite-controller/internal/config"
+	"github.com/aoliyougei/granite-controller/internal/native"
 	"testing"
 )
 

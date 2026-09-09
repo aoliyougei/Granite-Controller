@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"needle-controller/internal/apierror"
+	"github.com/aoliyougei/granite-controller/internal/apierror"
 )
 
 func DecodeJSON(w http.ResponseWriter, r *http.Request, dst any, maxBytes int64) *apierror.Error {

@@ -10,9 +10,9 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest"
 
-	"needle-controller/internal/config"
-	"needle-controller/internal/handler"
-	"needle-controller/internal/svc"
+	"github.com/aoliyougei/granite-controller/internal/config"
+	"github.com/aoliyougei/granite-controller/internal/handler"
+	"github.com/aoliyougei/granite-controller/internal/svc"
 )
 
 var configFile = flag.String("f", "etc/needle-controller.yaml", "configuration file")

@@ -1,8 +1,8 @@
 package managed
 
 import (
-	"needle-controller/internal/config"
-	"needle-controller/internal/native"
+	"github.com/aoliyougei/granite-controller/internal/config"
+	"github.com/aoliyougei/granite-controller/internal/native"
 )
 
 var managedToolJSON = []byte(`[{"name":"pve_vm_start","description":"Start a Proxmox VE virtual machine","parameters":{"type":"object","properties":{"vmid":{"type":"integer","description":"Numeric Proxmox VE virtual machine ID"}},"required":["vmid"],"additionalProperties":false}}]`)

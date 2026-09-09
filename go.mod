@@ -1,4 +1,4 @@
-module needle-controller
+module github.com/aoliyougei/granite-controller
 
 go 1.24
 

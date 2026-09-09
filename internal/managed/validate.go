@@ -2,8 +2,8 @@ package managed
 
 import (
 	"math"
-	"needle-controller/internal/apierror"
-	"needle-controller/internal/native"
+	"github.com/aoliyougei/granite-controller/internal/apierror"
+	"github.com/aoliyougei/granite-controller/internal/native"
 	"net/http"
 	"strconv"
 	"strings"

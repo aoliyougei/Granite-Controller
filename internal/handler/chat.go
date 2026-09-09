@@ -3,11 +3,11 @@ package handler
 import (
 	"context"
 	"fmt"
-	"needle-controller/internal/apierror"
-	"needle-controller/internal/managed"
-	"needle-controller/internal/native"
-	"needle-controller/internal/openai"
-	"needle-controller/internal/requestid"
+	"github.com/aoliyougei/granite-controller/internal/apierror"
+	"github.com/aoliyougei/granite-controller/internal/managed"
+	"github.com/aoliyougei/granite-controller/internal/native"
+	"github.com/aoliyougei/granite-controller/internal/openai"
+	"github.com/aoliyougei/granite-controller/internal/requestid"
 	"net/http"
 )
 

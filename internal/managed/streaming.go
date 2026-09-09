@@ -2,7 +2,7 @@ package managed
 
 import (
 	"encoding/json"
-	"needle-controller/internal/openai"
+	"github.com/aoliyougei/granite-controller/internal/openai"
 )
 
 type SSEEvent struct{ Data []byte }

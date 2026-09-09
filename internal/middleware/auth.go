@@ -4,8 +4,8 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/json"
-	"needle-controller/internal/apierror"
-	"needle-controller/internal/requestid"
+	"github.com/aoliyougei/granite-controller/internal/apierror"
+	"github.com/aoliyougei/granite-controller/internal/requestid"
 	"net/http"
 	"strings"
 )

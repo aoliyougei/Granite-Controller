@@ -2,11 +2,11 @@ package handler
 
 import (
 	"context"
-	"needle-controller/internal/apierror"
-	"needle-controller/internal/infracontrol"
-	"needle-controller/internal/managed"
-	"needle-controller/internal/native"
-	"needle-controller/internal/openai"
+	"github.com/aoliyougei/granite-controller/internal/apierror"
+	"github.com/aoliyougei/granite-controller/internal/infracontrol"
+	"github.com/aoliyougei/granite-controller/internal/managed"
+	"github.com/aoliyougei/granite-controller/internal/native"
+	"github.com/aoliyougei/granite-controller/internal/openai"
 	"net/http/httptest"
 	"strings"
 	"testing"

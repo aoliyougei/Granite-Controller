@@ -5,9 +5,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"needle-controller/internal/infracontrol"
-	"needle-controller/internal/native"
-	"needle-controller/internal/openai"
+	"github.com/aoliyougei/granite-controller/internal/infracontrol"
+	"github.com/aoliyougei/granite-controller/internal/native"
+	"github.com/aoliyougei/granite-controller/internal/openai"
 	"time"
 )
 

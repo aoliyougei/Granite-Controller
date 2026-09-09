@@ -7,8 +7,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"needle-controller/internal/apierror"
-	"needle-controller/internal/openai"
+	"github.com/aoliyougei/granite-controller/internal/apierror"
+	"github.com/aoliyougei/granite-controller/internal/openai"
 )
 
 type Input struct {
