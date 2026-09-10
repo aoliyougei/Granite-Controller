@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.0.0
+
+- Replace Needle 2 with pinned IBM Granite 4.0 350M Q4_K_M and a Go-managed loopback-only llama-server.
+- Add five fixed PVE VM tools: query, start, graceful shutdown, force stop, and reboot.
+- Add strict final-user input handling, tool/VM grounding, mutation state checks, and default-disabled force stop.
+- Add 30-second in-process mutation deduplication to prevent repeated Infrastructure submissions.
+- Add fixed Chinese/Emoji responses, query field whitelisting, and readable uptime.
+- Disable request-dump logging and record only safe metadata.
+- Bundle verified offline model/runtime artifacts in a non-root, read-only-capable image.
+- Real Granite acceptance: 87/100 correct candidates, 13 safe refusals, zero dangerous executable mismatches.
+
 ## v0.3.2
 
 - Raise both go-zero and Chat Completions request limits from 1 MiB to 8 MiB so Pi Agent envelopes containing system context and tool schemas reach the managed final-user parser.

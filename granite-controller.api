@@ -1,0 +1,29 @@
+syntax = "v1"
+
+info(
+  title: "Granite Controller"
+  version: "v1.0.0"
+)
+
+type ChatCompletionRequest {
+  Model string `json:"model"`
+  Messages []interface{} `json:"messages"`
+  Stream bool `json:"stream,optional"`
+}
+
+@server(prefix: /v1)
+service granite-controller {
+  @handler models
+  get /models returns (interface{})
+
+  @handler chatCompletions
+  post /chat/completions (ChatCompletionRequest) returns (interface{})
+}
+
+service granite-controller {
+  @handler health
+  get /healthz returns (interface{})
+
+  @handler ready
+  get /readyz returns (interface{})
+}

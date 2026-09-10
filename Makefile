@@ -1,4 +1,4 @@
-.PHONY: test race vet build native-test image
+.PHONY: test race vet build image
 
 test:
 	CGO_ENABLED=0 go test ./...
@@ -10,10 +10,7 @@ vet:
 	CGO_ENABLED=0 go vet ./...
 
 build:
-	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -trimpath -o bin/needle-controller ./cmd/needle-controller
-
-native-test:
-	CGO_ENABLED=1 go test -tags=needle_native ./internal/native -run TestRealNeedle -count=1
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -o bin/granite-controller ./cmd/granite-controller
 
 image:
-	docker build --platform linux/amd64 -t needle-controller:0.3.2 .
+	docker build --platform linux/amd64 -t granite-controller:1.0.0 .

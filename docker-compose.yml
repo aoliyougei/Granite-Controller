@@ -1,31 +1,10 @@
 services:
-  needle-controller:
-    build:
-      context: .
-    image: needle-controller:0.3.2
-    platform: linux/amd64
+  granite-controller:
+    build: .
+    image: registry.aoliyougei.com/aoliyougei/granite-controller:1.0.0
+    env_file: .env
     ports:
-      - "${CONTROLLER_PORT:-8080}:8080"
-    environment:
-      NEEDLE_API_KEY: "${NEEDLE_API_KEY:?required}"
-      NEEDLE_MODEL_ID: "${NEEDLE_MODEL_ID:-needle-2}"
-      NEEDLE_MIN_CONFIDENCE: "${NEEDLE_MIN_CONFIDENCE:-0.6}"
-      NEEDLE_MAX_MESSAGE_LENGTH: "${NEEDLE_MAX_MESSAGE_LENGTH:-512}"
-      NEEDLE_MAX_NEW_TOKENS: "${NEEDLE_MAX_NEW_TOKENS:-256}"
-      NEEDLE_MAX_QUEUE_DEPTH: "${NEEDLE_MAX_QUEUE_DEPTH:-32}"
-      NEEDLE_BUFFER_SIZE: "${NEEDLE_BUFFER_SIZE:-1048576}"
-      NEEDLE_TOOL_INDEX_PATH: "${NEEDLE_TOOL_INDEX_PATH:-}"
-      NEEDLE_ENGINE_SLOW_CALL: "${NEEDLE_ENGINE_SLOW_CALL:-30s}"
-      INFRA_CONTROL_API_BASE_URL: "${INFRA_CONTROL_API_BASE_URL:?required}"
-      INFRA_CONTROL_API_TOKEN: "${INFRA_CONTROL_API_TOKEN:?required}"
-      INFRA_CONTROL_TIMEOUT: "${INFRA_CONTROL_TIMEOUT:-30s}"
-    healthcheck:
-      test: ["CMD", "/needle-controller", "healthcheck"]
-      interval: 30s
-      timeout: 5s
-      start_period: 30s
-      retries: 3
-    restart: unless-stopped
+      - "8080:8080"
     read_only: true
     tmpfs:
       - /tmp
@@ -33,3 +12,6 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    mem_limit: 2g
+    cpus: 4
+    restart: unless-stopped
