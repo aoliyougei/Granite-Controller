@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/aoliyougei/granite-controller/internal/apierror"
 	"github.com/aoliyougei/granite-controller/internal/managed"
-	"github.com/aoliyougei/granite-controller/internal/native"
 	"github.com/aoliyougei/granite-controller/internal/openai"
 	"github.com/aoliyougei/granite-controller/internal/requestid"
 	"net/http"
@@ -14,7 +13,7 @@ import (
 const maxChatRequestBytes = 8 << 20
 
 type OpenAIService interface {
-	State() native.State
+	Ready() bool
 	ModelList() openai.ModelListResponse
 	Complete(context.Context, string, openai.ChatCompletionRequest) (managed.ResponseBody, *apierror.Error)
 }

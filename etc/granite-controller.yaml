@@ -1,0 +1,21 @@
+Name: granite-controller
+Host: 0.0.0.0
+Port: 8080
+Timeout: 130000
+MaxBytes: 8388608
+Mode: pro
+Middlewares:
+  Log: false
+Granite:
+  ModelID: granite-4.0-350m
+  StartupTimeout: 120s
+  RequestTimeout: 60s
+  Threads: 4
+  ContextSize: 4096
+  MaxTokens: 256
+  MaxMessageLength: 2048
+  AllowForceStop: false
+  ActionDedupWindow: 30s
+InfraControl:
+  BaseURL: ""
+  Timeout: 30s

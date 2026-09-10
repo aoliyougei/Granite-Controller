@@ -67,7 +67,7 @@ type Usage struct {
 }
 
 func ModelList(modelID string) ModelListResponse {
-	return ModelListResponse{Object: "list", Data: []Model{{ID: modelID, Object: "model", OwnedBy: "cactus-compute"}}}
+	return ModelListResponse{Object: "list", Data: []Model{{ID: modelID, Object: "model", OwnedBy: "ibm-granite"}}}
 }
 
 type SchemaLimits struct {
