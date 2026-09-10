@@ -62,7 +62,7 @@ func (s *Service) Complete(ctx context.Context, requestID string, request openai
 		return ResponseBody{}, err
 	}
 	input.Warnings = warnings
-	call, err := s.selector.Select(ctx, input.Original, GraniteTools())
+	call, err := s.selector.Select(ctx, input.Original, GraniteTools(s.cfg.AllowForceStop))
 	if err != nil {
 		return ResponseBody{}, err
 	}

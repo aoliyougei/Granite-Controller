@@ -32,7 +32,7 @@ var actions = map[Action]ActionMetadata{
 
 func Metadata(action Action) (ActionMetadata, bool) { m, ok := actions[action]; return m, ok }
 
-func GraniteTools() []openai.FunctionTool {
+func GraniteTools(allowForceStop bool) []openai.FunctionTool {
 	descriptions := []string{
 		"Get the current status of a Proxmox VE virtual machine. 查询虚拟机当前状态，不改变虚拟机。",
 		"Start a stopped Proxmox VE virtual machine. 开启或启动已停止的虚拟机。",
@@ -44,6 +44,9 @@ func GraniteTools() []openai.FunctionTool {
 	params := json.RawMessage(`{"type":"object","properties":{"vmid":{"type":"integer","description":"Numeric VM ID. 虚拟机数字 ID。"}},"required":["vmid"],"additionalProperties":false}`)
 	tools := make([]openai.FunctionTool, 0, len(order))
 	for i, action := range order {
+		if action == ActionStop && !allowForceStop {
+			continue
+		}
 		m, _ := Metadata(action)
 		tools = append(tools, openai.FunctionTool{Type: "function", Function: openai.FunctionDefinition{Name: m.ToolName, Description: descriptions[i], Parameters: params}})
 	}

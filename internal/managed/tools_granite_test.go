@@ -7,7 +7,7 @@ import (
 )
 
 func TestGraniteToolsAreFiveStrictBilingualFunctions(t *testing.T) {
-	tools := GraniteTools()
+	tools := GraniteTools(true)
 	if len(tools) != 5 {
 		t.Fatalf("tools=%d", len(tools))
 	}
@@ -22,6 +22,19 @@ func TestGraniteToolsAreFiveStrictBilingualFunctions(t *testing.T) {
 		}
 		if schema["additionalProperties"] != false {
 			t.Fatalf("schema=%v", schema)
+		}
+	}
+}
+
+func TestGraniteToolsHideForceStopUnlessEnabled(t *testing.T) {
+	withoutStop := GraniteTools(false)
+	withStop := GraniteTools(true)
+	if len(withoutStop) != 4 || len(withStop) != 5 {
+		t.Fatalf("without=%d with=%d", len(withoutStop), len(withStop))
+	}
+	for _, tool := range withoutStop {
+		if tool.Function.Name == "pve_vm_stop" {
+			t.Fatal("force-stop tool exposed while disabled")
 		}
 	}
 }

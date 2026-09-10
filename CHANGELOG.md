@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.0.1
+
+- Hide `pve_vm_stop` from Granite whenever force stop is disabled, preventing the 350M model from confusing normal shutdown with an unavailable force-stop tool.
+- Keep strict post-model action evidence checks; ambiguous model output is still rejected rather than rewritten.
+
 ## v1.0.0
 
 - Replace Needle 2 with pinned IBM Granite 4.0 350M Q4_K_M and a Go-managed loopback-only llama-server.

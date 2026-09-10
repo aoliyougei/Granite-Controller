@@ -16,10 +16,12 @@ import (
 type selectorStub struct {
 	call  granite.ToolCall
 	texts []string
+	tools []openai.FunctionTool
 }
 
-func (s *selectorStub) Select(_ context.Context, text string, _ []openai.FunctionTool) (granite.ToolCall, *apierror.Error) {
+func (s *selectorStub) Select(_ context.Context, text string, tools []openai.FunctionTool) (granite.ToolCall, *apierror.Error) {
 	s.texts = append(s.texts, text)
+	s.tools = tools
 	return s.call, nil
 }
 
@@ -63,8 +65,8 @@ func TestServiceQueriesAndRendersWithoutMutation(t *testing.T) {
 	infra := &infraStub{vm: infracontrol.VM{VMID: 3052, Name: "db", Status: "running", Uptime: 12588}}
 	s := NewService(sel, infra, ServiceConfig{ModelID: "granite-4.0-350m", MaxMessageLength: 2048, DedupWindow: 30 * time.Second})
 	response, err := s.Complete(context.Background(), "rid", chat("查询 VM 3052 状态"))
-	if err != nil || infra.gets != 1 || infra.posts != 0 || response.XGranite.Tool != "pve_vm_get" || response.Choices[0].Message.Content == nil {
-		t.Fatalf("response=%+v err=%v", response, err)
+	if err != nil || infra.gets != 1 || infra.posts != 0 || len(sel.tools) != 4 || response.XGranite.Tool != "pve_vm_get" || response.Choices[0].Message.Content == nil {
+		t.Fatalf("response=%+v tools=%d err=%v", response, len(sel.tools), err)
 	}
 }
 func TestServiceDeduplicatesMutationBeforeStateQuery(t *testing.T) {
