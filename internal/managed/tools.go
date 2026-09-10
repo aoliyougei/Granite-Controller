@@ -35,7 +35,7 @@ func Metadata(action Action) (ActionMetadata, bool) { m, ok := actions[action]; 
 func GraniteTools(allowForceStop bool) []openai.FunctionTool {
 	descriptions := []string{
 		"Get the current status of a Proxmox VE virtual machine. 查询虚拟机当前状态，不改变虚拟机。",
-		"Start a stopped Proxmox VE virtual machine. 开启或启动已停止的虚拟机。",
+		"Start or turn on a stopped Proxmox VE virtual machine. 打开、开启、开机或启动已停止的虚拟机。",
 		"Gracefully shut down a running Proxmox VE virtual machine. Use for shut down, turn off, normal shutdown, or graceful shutdown unless the user explicitly requests force. 关掉、关闭、关机、正常关机或优雅关机必须使用此工具；仅显式强制操作才不是此工具。",
 		"Force stop a running Proxmox VE virtual machine only when the user explicitly asks to force stop or cut power. 仅当用户原文明示强制停止、强制关机或强制断电时使用；普通关机禁止使用，且可能导致数据损坏。",
 		"Reboot a running Proxmox VE virtual machine. 重启或重新启动正在运行的虚拟机。",

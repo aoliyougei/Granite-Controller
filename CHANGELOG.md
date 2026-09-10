@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.0.3
+
+- Align the Granite start-tool description with accepted Chinese evidence by explicitly adding `打开`, `开启`, `开机`, and `启动`.
+- Keep Granite as the semantic selector and retain strict VM ID/action/state validation.
+
 ## v1.0.2
 
 - Treat everyday unforced Chinese phrases `关掉`, `关闭`, and `关机` as explicit evidence for graceful shutdown.

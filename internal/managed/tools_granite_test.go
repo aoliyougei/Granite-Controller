@@ -26,6 +26,20 @@ func TestGraniteToolsAreFiveStrictBilingualFunctions(t *testing.T) {
 	}
 }
 
+func TestGraniteStartToolDescribesEveryAcceptedStartPhrase(t *testing.T) {
+	var description string
+	for _, tool := range GraniteTools(false) {
+		if tool.Function.Name == "pve_vm_start" {
+			description = tool.Function.Description
+		}
+	}
+	for _, phrase := range []string{"打开", "开启", "开机", "启动"} {
+		if !strings.Contains(description, phrase) {
+			t.Fatalf("start description %q lacks %q", description, phrase)
+		}
+	}
+}
+
 func TestGraniteToolsHideForceStopUnlessEnabled(t *testing.T) {
 	withoutStop := GraniteTools(false)
 	withStop := GraniteTools(true)
