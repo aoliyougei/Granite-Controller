@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.0.2
+
+- Treat everyday unforced Chinese phrases `关掉`, `关闭`, and `关机` as explicit evidence for graceful shutdown.
+- Keep `强制关机`, `强制停止`, and `强制断电` isolated to the force-stop action and its default-disabled gate.
+
 ## v1.0.1
 
 - Hide `pve_vm_stop` from Granite whenever force stop is disabled, preventing the 350M model from confusing normal shutdown with an unavailable force-stop tool.
