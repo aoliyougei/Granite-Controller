@@ -12,8 +12,10 @@ import (
 )
 
 type Input struct {
-	Original string
-	Warnings []string
+	Original    string
+	VMID        int64
+	HasNegation bool
+	Warnings    []string
 }
 
 func ExtractInput(req openai.ChatCompletionRequest, maxRunes int) (Input, *apierror.Error) {
